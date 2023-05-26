@@ -11,9 +11,6 @@ pub struct WasmRuntime;
 /// Configuration for wasm runtime.
 #[derive(Debug, Clone)]
 pub struct WasmConfig {
-    /// Maximum memory size in bytes.
-    /// Default: 256 MiB
-    pub max_memory_size: usize,
     /// Maximum run time in seconds. <br/>
     /// Default: 0 (no limit) <br/>
     /// **Note:** This is not implemented yet.
@@ -40,7 +37,6 @@ pub enum InputData {
 impl Default for WasmConfig {
     fn default() -> Self {
         Self {
-            max_memory_size: 256 * 1024 * 1024,
             max_run_time: 0,
             stdin: InputData::Ignore,
             custom_config: wasmtime::Config::default()
@@ -58,11 +54,7 @@ impl CodeRuntime for WasmRuntime {
     /// Uses `wasmtime` to run the code.
     fn run(code: &CompiledCode<Self>, config: Self::Config) -> Result<ExecutionResult, Self::Error> {
         // Create config for wasmtime.
-        let mut wasm_config = config.custom_config;
-
-        // Set maximum memory size.
-        wasm_config.static_memory_maximum_size(config.max_memory_size as u64);
-        wasm_config.static_memory_forced(true);
+        let wasm_config = config.custom_config;
 
         // Create wasi pipes.
         let stdout = wasi_common::pipe::WritePipe::new_in_memory();
@@ -147,7 +139,7 @@ impl CodeRuntime for WasmRuntime {
 
 #[cfg(test)]
 mod tests {
-    use crate::compilers::{rust::RustCompiler, Compiler};
+    use crate::compilers::{rust::{RustCompiler}, Compiler};
 
     use super::*;
 
@@ -161,6 +153,25 @@ mod tests {
 
         let compiled_code = RustCompiler.compile(&mut code.as_bytes(), Default::default()).unwrap();
         let result = WasmRuntime::run(&compiled_code, Default::default()).unwrap();
+    
+        assert_eq!(result.stdout, Some("Hello, world!\n".to_owned()));
+    }
+
+    #[test]
+    fn test_wasm_runtime_with_input() {
+        let code = r#"
+            fn main() {
+                let mut input = String::new();
+                std::io::stdin().read_line(&mut input).unwrap();
+                println!("Hello, {}!", input.trim());
+            }
+        "#;
+
+        let compiled_code = RustCompiler.compile(&mut code.as_bytes(), Default::default()).unwrap();
+        let result = WasmRuntime::run(&compiled_code, WasmConfig {
+            stdin: InputData::String("world".to_owned()),
+            ..Default::default()
+        }).unwrap();
     
         assert_eq!(result.stdout, Some("Hello, world!\n".to_owned()));
     }
