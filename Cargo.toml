@@ -1,0 +1,12 @@
+[package]
+name = "exers"
+version = "0.1.0"
+edition = "2021"
+authors = ["Oliwier Michalik"]
+description = "Library for compiling and running other code in sandboxed environment"
+
+
+[dependencies]
+derivative = "2.2.0"
+tempfile = "3.5.0"
+wasmtime = "9.0.1"
