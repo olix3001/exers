@@ -2,7 +2,7 @@ use std::{io, sync::{Arc, Mutex}};
 
 use crate::{runtimes::{wasm_runtime::WasmRuntime, CodeRuntime}, common::compiler::OptLevel};
 
-use super::{Compiler, CompiledCode, CompilerConfig, IntoArgs};
+use super::{Compiler, CompiledCode, IntoArgs};
 
 /// Rust compiler.
 /// Compiles code using `rustc` command.
@@ -17,9 +17,9 @@ impl RustCompiler {
     pub fn compile_with_args<R: CodeRuntime> (
             &self,
             code: &mut impl io::Read,
-            config: CompilerConfig<R, Self>,
+            config: RustCompilerConfig,
             args: &[&str]
-        ) -> io::Result<CompiledCode<Self, R>> where Self: Compiler<R> {
+        ) -> io::Result<CompiledCode<R>> where Self: Compiler<R> {
         // Create temporary directory for code and executable.
         let temp_dir = tempfile::Builder::new().prefix("code-").tempdir()?;
 
@@ -34,7 +34,7 @@ impl RustCompiler {
         command.arg(code_file.path());
         
         // Add compiler arguments.
-        for arg in config.compiler_specific.clone().into_args() {
+        for arg in config.into_args() {
             command.arg(arg);
         }
 
@@ -51,9 +51,8 @@ impl RustCompiler {
         // Return compiled code.
         Ok(CompiledCode {
             executable: Some(temp_dir.path().join("executable.wasm")),
-            config,
-            compiler_marker: Default::default(),
-            temp_dir_handle: Arc::new(Mutex::new(Some(temp_dir)))
+            temp_dir_handle: Arc::new(Mutex::new(Some(temp_dir))),
+            runtime_marker: std::marker::PhantomData
         })
     }
 }
@@ -108,7 +107,7 @@ impl IntoArgs for RustCompilerConfig {
 impl Compiler<WasmRuntime> for RustCompiler {
     type Config = RustCompilerConfig;
 
-    fn compile(&self, code: &mut impl io::Read, config: CompilerConfig<WasmRuntime, Self>) -> io::Result<CompiledCode<Self, WasmRuntime>> {
+    fn compile(&self, code: &mut impl io::Read, config: RustCompilerConfig) -> io::Result<CompiledCode<WasmRuntime>> {
         // Compile the code using `rustc` command with given arguments.
         self.compile_with_args(code, config, &["--target", "wasm32-wasi"])
     }
@@ -121,7 +120,7 @@ mod tests {
     #[test]
     fn test_compile() {
         let mut code = "fn main() { println!(\"Hello, world!\"); }".as_bytes();
-        let config = CompilerConfig::default();
+        let config = RustCompilerConfig::default();
 
         let compiled_code = RustCompiler.compile(&mut code, config).unwrap();
         let executable = compiled_code.executable.as_ref().unwrap();

@@ -1,6 +1,6 @@
-use std::{io::{Read, BufReader}, path::PathBuf, fs::File, str::{from_utf8_unchecked, from_utf8}};
+use std::{io::BufReader, path::PathBuf, fs::File, str::from_utf8};
 
-use crate::compilers::{Compiler, CompiledCode};
+use crate::compilers::CompiledCode;
 
 use super::{CodeRuntime, ExecutionResult};
 use wasmtime_wasi::WasiCtxBuilder;
@@ -14,9 +14,10 @@ pub struct WasmConfig {
     /// Maximum memory size in bytes.
     /// Default: 256 MiB
     pub max_memory_size: usize,
-    /// Maximum runtime in seconds. <br/>
+    /// Maximum run time in seconds. <br/>
+    /// Default: 0 (no limit) <br/>
     /// **Note:** This is not implemented yet.
-    pub max_runtime: usize,
+    pub max_run_time: usize,
 
     /// File containing stdin to be used by the code.
     pub stdin: InputData,
@@ -40,7 +41,7 @@ impl Default for WasmConfig {
     fn default() -> Self {
         Self {
             max_memory_size: 256 * 1024 * 1024,
-            max_runtime: 0,
+            max_run_time: 0,
             stdin: InputData::Ignore,
             custom_config: wasmtime::Config::default()
         }
@@ -55,7 +56,7 @@ impl CodeRuntime for WasmRuntime {
     type Error = wasmtime::Error;
 
     /// Uses `wasmtime` to run the code.
-    fn run<C: Compiler<Self>>(code: &CompiledCode<C, Self>, config: Self::Config) -> Result<ExecutionResult, Self::Error> {
+    fn run(code: &CompiledCode<Self>, config: Self::Config) -> Result<ExecutionResult, Self::Error> {
         // Create config for wasmtime.
         let mut wasm_config = config.custom_config;
 
@@ -146,7 +147,7 @@ impl CodeRuntime for WasmRuntime {
 
 #[cfg(test)]
 mod tests {
-    use crate::compilers::rust::RustCompiler;
+    use crate::compilers::{rust::RustCompiler, Compiler};
 
     use super::*;
 

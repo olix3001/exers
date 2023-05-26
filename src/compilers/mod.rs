@@ -1,4 +1,4 @@
-use std::{io, fmt::Debug, marker::PhantomData, path::PathBuf, sync::{Arc, Mutex}};
+use std::{io, fmt::Debug, path::PathBuf, sync::{Arc, Mutex}};
 
 use tempfile::TempDir;
 
@@ -12,46 +12,25 @@ pub trait Compiler<R: CodeRuntime>: Send + Sync + Sized {
     type Config: Send + Sync + Sized + Debug + Clone + Default + IntoArgs;
 
     /// Compile the given code (as stream of bytes) and return the executable (in temporary file).
-    fn compile(&self, code: &mut impl io::Read, config: CompilerConfig<R, Self>) -> io::Result<CompiledCode<Self, R>>;
-}
-
-/// Configuration for compilers.
-#[derive(Debug, Clone)]
-pub struct CompilerConfig<R: CodeRuntime, C: Compiler<R>> {
-    /// Marker for the runtime used to run the compiled code.
-    pub runtime_marker: PhantomData<R>,
-    /// Compiler specific configuration.
-    /// This is used to pass additional arguments to the compiler.
-    pub compiler_specific: C::Config
-}
-
-impl<R: CodeRuntime, C: Compiler<R>> Default for CompilerConfig<R, C> {
-    fn default() -> Self {
-        CompilerConfig {
-            runtime_marker: Default::default(),
-            compiler_specific: Default::default()
-        }
-    }
+    fn compile(&self, code: &mut impl io::Read, config: Self::Config) -> io::Result<CompiledCode<R>>;
 }
 
 /// Compiled code (executable).
 /// Represents compiled code with additional information.
 #[derive(Debug, Clone)]
-pub struct CompiledCode<C: Compiler<R>, R: CodeRuntime> {
+pub struct CompiledCode<R: CodeRuntime> {
     /// Executable file (in temporary file).
     pub executable: Option<PathBuf>,
-    /// Configuration used to compile the code.
-    pub config: CompilerConfig<R, C>,    
-
-    /// Compiler used to compile the code (marker) 
-    pub compiler_marker: PhantomData<C>,
 
     /// Handle to the temporary directory.
     /// This is used to clean up the temporary directory when this object is dropped.
-    temp_dir_handle: Arc<Mutex<Option<TempDir>>>
+    temp_dir_handle: Arc<Mutex<Option<TempDir>>>,
+
+    /// Runtime marker.
+    runtime_marker: std::marker::PhantomData<R>
 }
 
-impl <C: Compiler<R>, R: CodeRuntime> CompiledCode<C, R> {
+impl <R: CodeRuntime> CompiledCode<R> {
     /// Clean up the compiled code.
     /// This deletes the temporary directory containing the executable.
     pub fn clean_up(&mut self) -> io::Result<()> {
@@ -63,7 +42,7 @@ impl <C: Compiler<R>, R: CodeRuntime> CompiledCode<C, R> {
     }
 }
 
-impl <C: Compiler<R>, R: CodeRuntime> Drop for CompiledCode<C, R> {
+impl <R: CodeRuntime> Drop for CompiledCode<R> {
     fn drop(&mut self) {
         self.clean_up().unwrap();
     }

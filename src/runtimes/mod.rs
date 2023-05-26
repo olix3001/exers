@@ -1,4 +1,4 @@
-use crate::compilers::{CompiledCode, Compiler};
+use crate::compilers::CompiledCode;
 use std::{fmt::Debug};
 
 pub mod wasm_runtime;
@@ -12,7 +12,7 @@ pub trait CodeRuntime: Send + Sync + Sized {
     type Error: Send + Sync + Sized + 'static;
     
     /// Run compiled code. Returns saved output (if any) and exit code.
-    fn run<C: Compiler<Self>>(code: &CompiledCode<C, Self>, config: Self::Config) -> Result<ExecutionResult, Self::Error>;
+    fn run(code: &CompiledCode<Self>, config: Self::Config) -> Result<ExecutionResult, Self::Error>;
 }
 
 /// Result of running code.
