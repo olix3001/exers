@@ -10,13 +10,14 @@ readme = "README.md"
 keywords = ["sandbox", "wasm", "rust", "compile"]
 
 [features]
-default = ["wasm", "rust"]
+default = ["wasm", "rust", "cpp"]
 
 # Runtimes
 wasm = ["wasmtime", "wasmtime-wasi", "wasi-common"]
 
 # Languages
 rust = []
+cpp = []
 
 [dependencies]
 derivative = "2.2.0"

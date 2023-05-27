@@ -1,35 +1,36 @@
 use std::{io, sync::{Arc, Mutex}};
 
-use crate::{runtimes::CodeRuntime, common::compiler::OptLevel};
+use crate::{common::compiler::OptLevel, runtimes::CodeRuntime};
 
-use super::{Compiler, CompiledCode, IntoArgs};
+use super::{CompiledCode, Compiler, IntoArgs};
 
-/// Rust compiler.
-/// Compiles code using `rustc` command. <br/>
-/// For configuration options see [`RustCompilerConfig`].
+/// C++ compiler.
+/// Compiles code using `clang++` for native code and `em++` for wasm code.
+/// For configuration options see [`CppCompilerConfig`].
 #[derive(Debug, Clone)]
-pub struct RustCompiler;
+pub struct CppCompiler;
 
-// Common elements for all rust compilers.
-impl RustCompiler {
+/// Common elements for all C++ compilers.
+impl CppCompiler {
     /// Compile the given code (as stream of bytes) and return the executable (in temporary file).
     /// This function is used by `Compiler` trait.
-    /// This also takes additional arguments for `rustc` command.
+    /// This also takes additional arguments for `clang++` command.
     pub fn compile_with_args<R: CodeRuntime> (
             &self,
             code: &mut impl io::Read,
-            config: RustCompilerConfig,
+            command: &str,
+            config: CppCompilerConfig,
             args: &[&str]
         ) -> io::Result<CompiledCode<R>> where Self: Compiler<R> {
         // Create temporary directory for code and executable.
         let temp_dir = tempfile::Builder::new().prefix("code-").tempdir()?;
 
         // Create temporary file for code.
-        let mut code_file = tempfile::Builder::new().prefix("code-").suffix(".rs").tempfile_in(temp_dir.path())?;
+        let mut code_file = tempfile::Builder::new().prefix("code-").suffix(".cpp").tempfile_in(temp_dir.path())?;
         io::copy(code, &mut code_file)?;
 
         // Compile the code using `rustc` command with given arguments.
-        let mut command = std::process::Command::new("rustc");
+        let mut command = std::process::Command::new(command);
         command.current_dir(temp_dir.path());
         command.args(args);
         command.arg(code_file.path());
@@ -41,6 +42,8 @@ impl RustCompiler {
 
         command.arg("-o");
         command.arg(temp_dir.path().join("executable.wasm"));
+
+        println!("{:?}", command);
 
         let output = command.spawn()?.wait_with_output()?;
 
@@ -59,51 +62,40 @@ impl RustCompiler {
     }
 }
 
-/// Configuration for rust compiler.
+/// Comfiguration for C++ compiler.
 #[derive(Debug, Clone)]
-pub struct RustCompilerConfig {
-    /// Opt level for rust compiler. <br/>
-    /// This is passed to `rustc` command using `-C opt-level=<level>` argument.
+pub struct CppCompilerConfig {
+    /// Opt level for C++ compiler. <br/>
+    /// This is passed to `clang++` command using `-O<level>` argument.
     pub opt_level: OptLevel,
-    /// Codegen units for rust compiler. <br/>
-    /// This is passed to `rustc` command using `-C codegen-units=<units>` argument.
-    pub codegen_units: u32,
 }
 
-impl RustCompilerConfig {
+impl CppCompilerConfig {
     /// Creates new fully optimized configuration.
     pub fn optimized() -> Self {
         Self {
             opt_level: OptLevel::O3,
-            codegen_units: 1
         }
     }
 }
 
-// Default configuration for rust compiler.
-impl Default for RustCompilerConfig {
+// Default configuration for C++ compiler.
+impl Default for CppCompilerConfig {
     fn default() -> Self {
         Self {
             opt_level: OptLevel::None,
-            codegen_units: 1
         }
     }
 }
 
-impl IntoArgs for RustCompilerConfig {
-    /// Convert this configuration to arguments for `rustc` command.
+impl IntoArgs for CppCompilerConfig {
     fn into_args(self) -> Vec<String> {
-        let mut args: Vec<String> = Vec::new();
+        let mut args = Vec::new();
 
         // Add opt level.
         if !matches!(self.opt_level, OptLevel::None) {
-            args.push("-C".to_string());
-            args.push(format!("opt-level={}", self.opt_level.as_stanard_opt_char()));
+            args.push(format!("-O{}", self.opt_level.as_stanard_opt_char()));
         }
-
-        // Add codegen units.
-        args.push("-C".to_string());
-        args.push(format!("codegen-units={}", self.codegen_units));
 
         args
     }
@@ -113,12 +105,11 @@ impl IntoArgs for RustCompilerConfig {
 #[cfg(feature = "wasm")]
 use crate::runtimes::wasm_runtime::WasmRuntime;
 #[cfg(feature = "wasm")]
-impl Compiler<WasmRuntime> for RustCompiler {
-    type Config = RustCompilerConfig;
+impl Compiler<WasmRuntime> for CppCompiler {
+    type Config = CppCompilerConfig;
 
-    fn compile(&self, code: &mut impl io::Read, config: RustCompilerConfig) -> io::Result<CompiledCode<WasmRuntime>> {
-        // Compile the code using `rustc` command with given arguments.
-        self.compile_with_args(code, config, &["--target", "wasm32-wasi"])
+    fn compile(&self, code: &mut impl io::Read, config: Self::Config) -> io::Result<CompiledCode<WasmRuntime>> {
+        self.compile_with_args(code, "em++", config, &[])
     }
 }
 
@@ -127,14 +118,20 @@ mod tests {
     use super::*;
 
     #[test]
-    #[cfg(feature = "wasm")]
-    fn test_compile_wasm() {
-        let mut code = "fn main() { println!(\"Hello, world!\"); }".as_bytes();
-        let config = RustCompilerConfig::default();
+    fn test_cpp_compiler_wasm() {
+        let code =r#"
+            #include <iostream>
+            int main() {
+                std::cout << "Hello, World!";
+                return 0;
+            }
+        "#;
 
-        let compiled_code: CompiledCode<WasmRuntime> = RustCompiler.compile(&mut code, config).unwrap();
-        let executable = compiled_code.executable.as_ref().unwrap();
+        let compiled_code = CppCompiler.compile(&mut code.as_bytes(), Default::default()).unwrap();
+        let result = WasmRuntime::run(&compiled_code, Default::default()).unwrap();
 
-        assert!(executable.exists());
+        assert_eq!(result.stdout.unwrap(), "Hello, World!");
+        assert_eq!(result.stderr.unwrap(), "");
+        assert_eq!(result.exit_code, 0);
     }
 }

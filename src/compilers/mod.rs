@@ -6,6 +6,8 @@ use crate::runtimes::CodeRuntime;
 
 #[cfg(feature = "rust")]
 pub mod rust_compiler;
+#[cfg(feature = "cpp")]
+pub mod cpp_compiler;
 
 /// Trait for every compiler that can be used to compile some code.
 pub trait Compiler<R: CodeRuntime>: Send + Sync + Sized {
