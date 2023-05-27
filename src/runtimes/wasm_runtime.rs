@@ -5,6 +5,8 @@ use crate::compilers::CompiledCode;
 use super::{CodeRuntime, ExecutionResult};
 use wasmtime_wasi::WasiCtxBuilder;
 
+/// Runtime for wasm code.
+/// This uses `wasmtime` to run the code.
 #[derive(Debug, Clone, Default)]
 pub struct WasmRuntime;
 

@@ -1,6 +1,6 @@
 use std::{io, sync::{Arc, Mutex}};
 
-use crate::{runtimes::CodeRuntime, common::compiler::OptLevel};
+use crate::{runtimes::CodeRuntime, common::compiler::{OptLevel, check_program_installed}};
 
 use super::{Compiler, CompiledCode, IntoArgs};
 
@@ -21,8 +21,10 @@ impl RustCompiler {
             config: RustCompilerConfig,
             args: &[&str]
         ) -> io::Result<CompiledCode<R>> where Self: Compiler<R> {
+        check_program_installed("rustc");
+
         // Create temporary directory for code and executable.
-        let temp_dir = tempfile::Builder::new().prefix("code-").tempdir()?;
+        let temp_dir = tempfile::Builder::new().prefix("exers-").tempdir()?;
 
         // Create temporary file for code.
         let mut code_file = tempfile::Builder::new().prefix("code-").suffix(".rs").tempfile_in(temp_dir.path())?;

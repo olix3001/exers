@@ -1,6 +1,6 @@
 use std::{io, sync::{Arc, Mutex}};
 
-use crate::{common::compiler::OptLevel, runtimes::CodeRuntime};
+use crate::{common::compiler::{OptLevel, check_program_installed}, runtimes::CodeRuntime};
 
 use super::{CompiledCode, Compiler, IntoArgs};
 
@@ -23,7 +23,7 @@ impl CppCompiler {
             args: &[&str]
         ) -> io::Result<CompiledCode<R>> where Self: Compiler<R> {
         // Create temporary directory for code and executable.
-        let temp_dir = tempfile::Builder::new().prefix("code-").tempdir()?;
+        let temp_dir = tempfile::Builder::new().prefix("exers-").tempdir()?;
 
         // Create temporary file for code.
         let mut code_file = tempfile::Builder::new().prefix("code-").suffix(".cpp").tempfile_in(temp_dir.path())?;
@@ -44,7 +44,6 @@ impl CppCompiler {
         command.arg(temp_dir.path().join("executable.wasm"));
 
         println!("{:?}", command);
-
         let output = command.spawn()?.wait_with_output()?;
 
         // Check if compilation was successful.
@@ -109,7 +108,8 @@ impl Compiler<WasmRuntime> for CppCompiler {
     type Config = CppCompilerConfig;
 
     fn compile(&self, code: &mut impl io::Read, config: Self::Config) -> io::Result<CompiledCode<WasmRuntime>> {
-        self.compile_with_args(code, "em++", config, &[])
+        check_program_installed("wasic++");
+        self.compile_with_args(code, "wasic++", config, &[])
     }
 }
 

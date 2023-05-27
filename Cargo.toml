@@ -10,10 +10,11 @@ readme = "README.md"
 keywords = ["sandbox", "wasm", "rust", "compile"]
 
 [features]
-default = ["wasm", "rust", "cpp"]
+default = ["wasm", "native", "rust", "cpp"]
 
 # Runtimes
 wasm = ["wasmtime", "wasmtime-wasi", "wasi-common"]
+native = []
 
 # Languages
 rust = []
@@ -21,7 +22,9 @@ cpp = []
 
 [dependencies]
 derivative = "2.2.0"
+include_dir = "0.7.3"
 tempfile = "3.5.0"
 wasi-common = { version = "9.0.1", optional = true }
 wasmtime = { version = "9.0.1", optional = true }
 wasmtime-wasi = { version = "9.0.1", optional = true }
+which = "4.4.0"
