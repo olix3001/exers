@@ -1,10 +1,12 @@
-use std::{io::BufReader, path::PathBuf, fs::File, str::from_utf8};
+use std::{io::BufReader, fs::File, str::from_utf8};
 
-use crate::compilers::CompiledCode;
+use crate::{compilers::CompiledCode, common::runtime::InputData};
 
 use super::{CodeRuntime, ExecutionResult};
 use wasmtime_wasi::WasiCtxBuilder;
 
+/// Runtime for wasm code.
+/// This uses `wasmtime` to run the code.
 #[derive(Debug, Clone, Default)]
 pub struct WasmRuntime;
 
@@ -23,16 +25,6 @@ pub struct WasmConfig {
     pub custom_config: wasmtime::Config
 }
 
-/// Represents input data for the code.
-#[derive(Debug, Clone)]
-pub enum InputData {
-    /// Stdin will be read from the given file.
-    File(PathBuf),
-    /// Stdin will be read from the given string.
-    String(String),
-    /// Stdin will be ignored.
-    Ignore
-}
 
 impl Default for WasmConfig {
     fn default() -> Self {

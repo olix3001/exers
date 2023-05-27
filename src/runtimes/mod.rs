@@ -3,6 +3,8 @@ use std::{fmt::Debug};
 
 #[cfg(feature = "wasm")]
 pub mod wasm_runtime;
+#[cfg(feature = "native")]
+pub mod native_runtime;
 
 /// Trait for every code runtime.
 /// Represents a runtime that can be used to run some code.
