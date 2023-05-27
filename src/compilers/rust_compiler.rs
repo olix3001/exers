@@ -19,7 +19,8 @@ impl RustCompiler {
             &self,
             code: &mut impl io::Read,
             config: RustCompilerConfig,
-            args: &[&str]
+            args: &[&str],
+            output_name: &str
         ) -> io::Result<CompiledCode<R>> where Self: Compiler<R> {
         check_program_installed("rustc");
 
@@ -42,7 +43,7 @@ impl RustCompiler {
         }
 
         command.arg("-o");
-        command.arg(temp_dir.path().join("executable.wasm"));
+        command.arg(temp_dir.path().join(output_name));
 
         let output = command.spawn()?.wait_with_output()?;
 
@@ -53,7 +54,7 @@ impl RustCompiler {
 
         // Return compiled code.
         Ok(CompiledCode {
-            executable: Some(temp_dir.path().join("executable.wasm")),
+            executable: Some(temp_dir.path().join(output_name)),
             temp_dir_handle: Arc::new(Mutex::new(Some(temp_dir))),
             additional_data: R::AdditionalData::default(),
             runtime_marker: std::marker::PhantomData
@@ -120,7 +121,20 @@ impl Compiler<WasmRuntime> for RustCompiler {
 
     fn compile(&self, code: &mut impl io::Read, config: RustCompilerConfig) -> io::Result<CompiledCode<WasmRuntime>> {
         // Compile the code using `rustc` command with given arguments.
-        self.compile_with_args(code, config, &["--target", "wasm32-wasi"])
+        self.compile_with_args(code, config, &["--target", "wasm32-wasi"], "executable.wasm")
+    }
+}
+
+/// Compiler for native runtime.
+#[cfg(feature = "native")]
+use crate::runtimes::native_runtime::NativeRuntime;
+#[cfg(feature = "native")]
+impl Compiler<NativeRuntime> for RustCompiler {
+    type Config = RustCompilerConfig;
+
+    fn compile(&self, code: &mut impl io::Read, config: RustCompilerConfig) -> io::Result<CompiledCode<NativeRuntime>> {
+        // Compile the code using `rustc` command with given arguments.
+        self.compile_with_args(code, config, &[], "executable")
     }
 }
 
