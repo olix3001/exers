@@ -24,7 +24,7 @@ fn main() {
 | Language | Supported Runtimes | Required Dependencies |
 | -------- | ------------------ | --------------------- |
 | Rust     | Wasm, Native       | Rustc                 |
-| C++      | Native             | clang++               |
+| C++      | Wasm, Native       | clang++               |
 | Python   | None               | ---                   |
 | Java     | None               | ---                   |
 | C#       | None               | ---                   |
@@ -39,3 +39,22 @@ fn main() {
 | Native      | Implemented                                  |
 | Jailed      | In development, not working                  |
 | Firecracker | Not started                                  |
+
+## Contributing :handshake:
+
+If you want to contribute to this project, please keep my code style and formatting. I use `rustfmt` to format my code. Please also make sure that your code compiles and that all tests pass. If you want to add a new language or runtime, remember to write tests and comment your code well.
+
+Commits should follow the [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) specification.
+
+## Requirements :clipboard:
+
+### WASM
+
+If you want to use the WASM runtime, you need to install the `wasm32-wasi` target for rustc. You can do this by running `rustup target add wasm32-wasi`.
+
+For C++ you need to install `wasi-sdk` or other WASI sdk/libc and specify
+`WASI_SYSROOT` environment variable to point to the sdk sysroot.
+
+### Native
+
+Native runtime just requires dependencies for the language you want to use.

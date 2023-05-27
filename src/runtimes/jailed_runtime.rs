@@ -1,6 +1,6 @@
-use crate::compilers::{Compiler, CompiledCode};
+use crate::compilers::{CompiledCode, Compiler};
 
-use super::{CodeRuntime, native_runtime::NativeRuntime};
+use super::{native_runtime::NativeRuntime, CodeRuntime};
 
 /// Jailed runtime.
 /// This uses chroot jail to run the code.
@@ -12,13 +12,13 @@ pub struct JailedRuntime;
 /// Jail configuration.
 #[derive(Debug, Clone)]
 pub struct JailedConfig {
-    native_runtime_config: super::native_runtime::NativeConfig
+    native_runtime_config: super::native_runtime::NativeConfig,
 }
 
 impl Default for JailedConfig {
     fn default() -> Self {
         Self {
-            native_runtime_config: super::native_runtime::NativeConfig::default()
+            native_runtime_config: super::native_runtime::NativeConfig::default(),
         }
     }
 }
@@ -33,18 +33,29 @@ impl CodeRuntime for JailedRuntime {
     type Error = std::io::Error;
 
     /// Runs the code in a chroot jail.
-    fn run(&self, code: &crate::compilers::CompiledCode<Self>, config: Self::Config) -> Result<super::ExecutionResult, Self::Error> {
+    fn run(
+        &self,
+        code: &crate::compilers::CompiledCode<Self>,
+        config: Self::Config,
+    ) -> Result<super::ExecutionResult, Self::Error> {
         todo!()
     }
 }
 
 /// Implementation of JailedRuntime compiler for every native compiler.
-impl<C> Compiler<JailedRuntime> for C where C: Compiler<NativeRuntime> {
+impl<C> Compiler<JailedRuntime> for C
+where
+    C: Compiler<NativeRuntime>,
+{
     /// Configuration for the compiler.
     type Config = C::Config;
 
     /// Compiles the code using the native compiler.
-    fn compile(&self, code: &mut impl std::io::Read, config: Self::Config) -> std::io::Result<crate::compilers::CompiledCode<JailedRuntime>> {
+    fn compile(
+        &self,
+        code: &mut impl std::io::Read,
+        config: Self::Config,
+    ) -> std::io::Result<crate::compilers::CompiledCode<JailedRuntime>> {
         let native_code: CompiledCode<NativeRuntime> = C::compile(&self, code, config)?;
         Ok(CompiledCode {
             executable: native_code.executable.clone(),
@@ -58,7 +69,7 @@ impl<C> Compiler<JailedRuntime> for C where C: Compiler<NativeRuntime> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::compilers::{Compiler, rust_compiler::RustCompiler};
+    use crate::compilers::{rust_compiler::RustCompiler, Compiler};
 
     // #[test]
     // fn test_compile() {
@@ -70,7 +81,7 @@ mod tests {
 
     //     let compiled_code = RustCompiler.compile(&mut code.as_bytes(), Default::default()).unwrap();
     //     let result = JailedRuntime.run(&compiled_code, Default::default()).unwrap();
-        
+
     //     assert_eq!(result.stdout, Some("Hello, world!\n".to_string()));
     // }
 }

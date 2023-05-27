@@ -1,8 +1,14 @@
-use std::{io, sync::{Arc, Mutex}};
+use std::{
+    io,
+    sync::{Arc, Mutex},
+};
 
-use crate::{runtimes::CodeRuntime, common::compiler::{OptLevel, check_program_installed}};
+use crate::{
+    common::compiler::{check_program_installed, OptLevel},
+    runtimes::CodeRuntime,
+};
 
-use super::{Compiler, CompiledCode, IntoArgs};
+use super::{CompiledCode, Compiler, IntoArgs};
 
 /// Rust compiler.
 /// Compiles code using `rustc` command. <br/>
@@ -15,20 +21,26 @@ impl RustCompiler {
     /// Compile the given code (as stream of bytes) and return the executable (in temporary file).
     /// This function is used by `Compiler` trait.
     /// This also takes additional arguments for `rustc` command.
-    pub fn compile_with_args<R: CodeRuntime> (
-            &self,
-            code: &mut impl io::Read,
-            config: RustCompilerConfig,
-            args: &[&str],
-            output_name: &str
-        ) -> io::Result<CompiledCode<R>> where Self: Compiler<R> {
+    pub fn compile_with_args<R: CodeRuntime>(
+        &self,
+        code: &mut impl io::Read,
+        config: RustCompilerConfig,
+        args: &[&str],
+        output_name: &str,
+    ) -> io::Result<CompiledCode<R>>
+    where
+        Self: Compiler<R>,
+    {
         check_program_installed("rustc");
 
         // Create temporary directory for code and executable.
         let temp_dir = tempfile::Builder::new().prefix("exers-").tempdir()?;
 
         // Create temporary file for code.
-        let mut code_file = tempfile::Builder::new().prefix("code-").suffix(".rs").tempfile_in(temp_dir.path())?;
+        let mut code_file = tempfile::Builder::new()
+            .prefix("code-")
+            .suffix(".rs")
+            .tempfile_in(temp_dir.path())?;
         io::copy(code, &mut code_file)?;
 
         // Compile the code using `rustc` command with given arguments.
@@ -36,7 +48,7 @@ impl RustCompiler {
         command.current_dir(temp_dir.path());
         command.args(args);
         command.arg(code_file.path());
-        
+
         // Add compiler arguments.
         for arg in config.clone().into_args() {
             command.arg(arg);
@@ -57,7 +69,7 @@ impl RustCompiler {
             executable: Some(temp_dir.path().join(output_name)),
             temp_dir_handle: Arc::new(Mutex::new(Some(temp_dir))),
             additional_data: R::AdditionalData::default(),
-            runtime_marker: std::marker::PhantomData
+            runtime_marker: std::marker::PhantomData,
         })
     }
 }
@@ -78,7 +90,7 @@ impl RustCompilerConfig {
     pub fn optimized() -> Self {
         Self {
             opt_level: OptLevel::O3,
-            codegen_units: 1
+            codegen_units: 1,
         }
     }
 }
@@ -88,7 +100,7 @@ impl Default for RustCompilerConfig {
     fn default() -> Self {
         Self {
             opt_level: OptLevel::None,
-            codegen_units: 1
+            codegen_units: 1,
         }
     }
 }
@@ -101,7 +113,10 @@ impl IntoArgs for RustCompilerConfig {
         // Add opt level.
         if !matches!(self.opt_level, OptLevel::None) {
             args.push("-C".to_string());
-            args.push(format!("opt-level={}", self.opt_level.as_stanard_opt_char()));
+            args.push(format!(
+                "opt-level={}",
+                self.opt_level.as_stanard_opt_char()
+            ));
         }
 
         // Add codegen units.
@@ -119,9 +134,18 @@ use crate::runtimes::wasm_runtime::WasmRuntime;
 impl Compiler<WasmRuntime> for RustCompiler {
     type Config = RustCompilerConfig;
 
-    fn compile(&self, code: &mut impl io::Read, config: RustCompilerConfig) -> io::Result<CompiledCode<WasmRuntime>> {
+    fn compile(
+        &self,
+        code: &mut impl io::Read,
+        config: RustCompilerConfig,
+    ) -> io::Result<CompiledCode<WasmRuntime>> {
         // Compile the code using `rustc` command with given arguments.
-        self.compile_with_args(code, config, &["--target", "wasm32-wasi"], "executable.wasm")
+        self.compile_with_args(
+            code,
+            config,
+            &["--target", "wasm32-wasi"],
+            "executable.wasm",
+        )
     }
 }
 
@@ -132,7 +156,11 @@ use crate::runtimes::native_runtime::NativeRuntime;
 impl Compiler<NativeRuntime> for RustCompiler {
     type Config = RustCompilerConfig;
 
-    fn compile(&self, code: &mut impl io::Read, config: RustCompilerConfig) -> io::Result<CompiledCode<NativeRuntime>> {
+    fn compile(
+        &self,
+        code: &mut impl io::Read,
+        config: RustCompilerConfig,
+    ) -> io::Result<CompiledCode<NativeRuntime>> {
         // Compile the code using `rustc` command with given arguments.
         self.compile_with_args(code, config, &[], "executable")
     }
@@ -148,7 +176,8 @@ mod tests {
         let mut code = "fn main() { println!(\"Hello, world!\"); }".as_bytes();
         let config = RustCompilerConfig::default();
 
-        let compiled_code: CompiledCode<WasmRuntime> = RustCompiler.compile(&mut code, config).unwrap();
+        let compiled_code: CompiledCode<WasmRuntime> =
+            RustCompiler.compile(&mut code, config).unwrap();
         let executable = compiled_code.executable.as_ref().unwrap();
 
         assert!(executable.exists());

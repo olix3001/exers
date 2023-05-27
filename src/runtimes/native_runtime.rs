@@ -1,4 +1,4 @@
-use std::{process::Stdio, io::Write};
+use std::{io::Write, process::Stdio};
 
 use crate::common::runtime::InputData;
 
@@ -36,9 +36,7 @@ pub struct NativeAdditionalData {
 
 impl Default for NativeAdditionalData {
     fn default() -> Self {
-        Self {
-            program: None,
-        }
+        Self { program: None }
     }
 }
 
@@ -52,18 +50,22 @@ impl CodeRuntime for NativeRuntime {
     type Error = std::io::Error;
 
     /// Runs the code natively on the server.
-    fn run(&self, code: &crate::compilers::CompiledCode<Self>, config: Self::Config) -> Result<super::ExecutionResult, Self::Error> {
+    fn run(
+        &self,
+        code: &crate::compilers::CompiledCode<Self>,
+        config: Self::Config,
+    ) -> Result<super::ExecutionResult, Self::Error> {
         // Create new process.
         let mut process = match &code.additional_data.program {
             Some(program) => std::process::Command::new(program),
-            None => std::process::Command::new(&code.executable.as_ref().unwrap())
+            None => std::process::Command::new(&code.executable.as_ref().unwrap()),
         };
 
         // Set stdin.
         match config.stdin {
             InputData::Ignore => {
                 process.stdin(std::process::Stdio::null());
-            },
+            }
             _ => {
                 process.stdin(Stdio::piped());
             }
@@ -82,10 +84,10 @@ impl CodeRuntime for NativeRuntime {
 
         // Write to stdin.
         match config.stdin {
-            InputData::Ignore => {},
+            InputData::Ignore => {}
             InputData::String(data) => {
                 process.stdin.as_mut().unwrap().write_all(data.as_bytes())?;
-            },
+            }
             InputData::File(path) => {
                 let mut file = std::fs::File::open(path)?;
                 std::io::copy(&mut file, process.stdin.as_mut().unwrap())?;
@@ -101,13 +103,13 @@ impl CodeRuntime for NativeRuntime {
         // Get stdout.
         let stdout = match output.stdout.len() {
             0 => None,
-            _ => Some(String::from_utf8(output.stdout).unwrap())
+            _ => Some(String::from_utf8(output.stdout).unwrap()),
         };
 
         // Get stderr.
         let stderr = match output.stderr.len() {
             0 => None,
-            _ => Some(String::from_utf8(output.stderr).unwrap())
+            _ => Some(String::from_utf8(output.stderr).unwrap()),
         };
 
         // Return the result.
@@ -125,7 +127,7 @@ mod tests {
     use crate::compilers::{rust_compiler::RustCompiler, Compiler};
 
     use super::*;
-    
+
     #[test]
     fn test_native_runtime() {
         let code = r#"
@@ -134,8 +136,12 @@ mod tests {
         }
         "#;
 
-        let compiled_code = RustCompiler.compile(&mut code.as_bytes(), Default::default()).unwrap();
-        let result = NativeRuntime.run(&compiled_code, Default::default()).unwrap();
+        let compiled_code = RustCompiler
+            .compile(&mut code.as_bytes(), Default::default())
+            .unwrap();
+        let result = NativeRuntime
+            .run(&compiled_code, Default::default())
+            .unwrap();
 
         assert_eq!(result.stdout, Some("Hello, world!\n".to_owned()));
     }

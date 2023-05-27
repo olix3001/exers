@@ -1,4 +1,3 @@
-
 /// Enum for opt level
 /// Some compilers may not support all opt levels
 #[derive(Debug, Clone)]
@@ -16,7 +15,7 @@ pub enum OptLevel {
     /// Opt level 3
     O3,
     /// Custom optimization level
-    Custom(String)
+    Custom(String),
 }
 
 impl OptLevel {
@@ -28,14 +27,18 @@ impl OptLevel {
             OptLevel::O1 => "1",
             OptLevel::O2 => "2",
             OptLevel::O3 => "3",
-            OptLevel::Custom(c) => c
-        }.to_string()
+            OptLevel::Custom(c) => c,
+        }
+        .to_string()
     }
 }
 
 /// Checks if program is installed and panic with nice message if it is not.
 pub fn check_program_installed(program: &str) {
     if !which::which(program).is_ok() {
-        panic!("{} is not installed. Please install it and try again.", program);
+        panic!(
+            "{} is not installed. Please install it and try again.",
+            program
+        );
     }
 }

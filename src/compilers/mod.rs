@@ -1,13 +1,18 @@
-use std::{io, fmt::Debug, path::PathBuf, sync::{Arc, Mutex}};
+use std::{
+    fmt::Debug,
+    io,
+    path::PathBuf,
+    sync::{Arc, Mutex},
+};
 
 use tempfile::TempDir;
 
 use crate::runtimes::CodeRuntime;
 
-#[cfg(feature = "rust")]
-pub mod rust_compiler;
 #[cfg(feature = "cpp")]
 pub mod cpp_compiler;
+#[cfg(feature = "rust")]
+pub mod rust_compiler;
 
 /// Trait for every compiler that can be used to compile some code.
 pub trait Compiler<R: CodeRuntime>: Send + Sync + Sized {
@@ -15,7 +20,11 @@ pub trait Compiler<R: CodeRuntime>: Send + Sync + Sized {
     type Config: Send + Sync + Sized + Debug + Clone + Default + IntoArgs;
 
     /// Compile the given code (as stream of bytes) and return the executable (in temporary file).
-    fn compile(&self, code: &mut impl io::Read, config: Self::Config) -> io::Result<CompiledCode<R>>;
+    fn compile(
+        &self,
+        code: &mut impl io::Read,
+        config: Self::Config,
+    ) -> io::Result<CompiledCode<R>>;
 }
 
 /// Compiled code (executable).
@@ -37,7 +46,7 @@ pub struct CompiledCode<R: CodeRuntime> {
     pub runtime_marker: std::marker::PhantomData<R>,
 }
 
-impl <R: CodeRuntime> CompiledCode<R> {
+impl<R: CodeRuntime> CompiledCode<R> {
     /// Clean up the compiled code.
     /// This deletes the temporary directory containing the executable.
     pub fn clean_up(&mut self) -> io::Result<()> {
@@ -45,7 +54,7 @@ impl <R: CodeRuntime> CompiledCode<R> {
         match self.temp_dir_handle.lock().unwrap().take() {
             Some(temp_dir) => {
                 temp_dir.close()?;
-            },
+            }
             None => {}
         }
 
@@ -53,7 +62,7 @@ impl <R: CodeRuntime> CompiledCode<R> {
     }
 }
 
-impl <R: CodeRuntime> Drop for CompiledCode<R> {
+impl<R: CodeRuntime> Drop for CompiledCode<R> {
     fn drop(&mut self) {
         self.clean_up().unwrap();
     }

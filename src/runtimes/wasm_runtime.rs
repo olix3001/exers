@@ -1,6 +1,9 @@
-use std::{io::{Read, Write}, fs::File};
+use std::{
+    fs::File,
+    io::{Read, Write},
+};
 
-use crate::{compilers::CompiledCode, common::runtime::InputData};
+use crate::{common::runtime::InputData, compilers::CompiledCode};
 
 use super::{CodeRuntime, ExecutionResult};
 
@@ -21,7 +24,6 @@ pub struct WasmConfig {
     pub stdin: InputData,
 }
 
-
 impl Default for WasmConfig {
     fn default() -> Self {
         Self {
@@ -41,7 +43,11 @@ impl CodeRuntime for WasmRuntime {
     type Error = Box<dyn std::error::Error + Send + Sync>;
 
     /// Uses `wasmtime` to run the code.
-    fn run(&self, code: &CompiledCode<Self>, config: Self::Config) -> Result<ExecutionResult, Self::Error> {
+    fn run(
+        &self,
+        code: &CompiledCode<Self>,
+        config: Self::Config,
+    ) -> Result<ExecutionResult, Self::Error> {
         // Create store.
         let mut store = wasmer::Store::default();
         let module = wasmer::Module::from_file(&store, &code.executable.as_ref().unwrap())?;
@@ -56,14 +62,14 @@ impl CodeRuntime for WasmRuntime {
             InputData::String(input) => {
                 stdin_tx.write_all(input.as_bytes())?;
                 stdin_tx.write(b"\n")?; // Add a newline to the end of input.
-            },
+            }
             InputData::File(path) => {
                 let mut file = File::open(path)?;
                 let mut buf = Vec::new();
                 file.read_to_end(&mut buf)?;
                 stdin_tx.write_all(&buf)?;
-            },
-            InputData::Ignore => {},
+            }
+            InputData::Ignore => {}
         }
 
         // Create wasi instance.
@@ -110,7 +116,7 @@ impl CodeRuntime for WasmRuntime {
             exit_code: 0,
         })
     }
-}   
+}
 
 #[cfg(test)]
 mod tests {
@@ -126,9 +132,11 @@ mod tests {
             }
         "#;
 
-        let compiled_code = RustCompiler.compile(&mut code.as_bytes(), Default::default()).unwrap();
+        let compiled_code = RustCompiler
+            .compile(&mut code.as_bytes(), Default::default())
+            .unwrap();
         let result = WasmRuntime.run(&compiled_code, Default::default()).unwrap();
-    
+
         assert_eq!(result.stdout, Some("Hello, world!\n".to_owned()));
     }
 
@@ -142,12 +150,19 @@ mod tests {
             }
         "#;
 
-        let compiled_code = RustCompiler.compile(&mut code.as_bytes(), Default::default()).unwrap();
-        let result = WasmRuntime.run(&compiled_code, WasmConfig {
-            stdin: InputData::String("world".to_owned()),
-            ..Default::default()
-        }).unwrap();
-    
+        let compiled_code = RustCompiler
+            .compile(&mut code.as_bytes(), Default::default())
+            .unwrap();
+        let result = WasmRuntime
+            .run(
+                &compiled_code,
+                WasmConfig {
+                    stdin: InputData::String("world".to_owned()),
+                    ..Default::default()
+                },
+            )
+            .unwrap();
+
         assert_eq!(result.stdout, Some("Hello, world!\n".to_owned()));
     }
 
@@ -161,12 +176,19 @@ mod tests {
             }
         "#;
 
-        let compiled_code = RustCompiler.compile(&mut code.as_bytes(), Default::default()).unwrap();
-        let result = WasmRuntime.run(&compiled_code, WasmConfig {
-            stdin: InputData::String("world".to_owned()),
-            ..Default::default()
-        }).unwrap();
-    
+        let compiled_code = RustCompiler
+            .compile(&mut code.as_bytes(), Default::default())
+            .unwrap();
+        let result = WasmRuntime
+            .run(
+                &compiled_code,
+                WasmConfig {
+                    stdin: InputData::String("world".to_owned()),
+                    ..Default::default()
+                },
+            )
+            .unwrap();
+
         assert_eq!(result.stdout, Some("Hello, world!\n".to_owned()));
         assert!(result.time_taken.as_nanos() > 0);
     }

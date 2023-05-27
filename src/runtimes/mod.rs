@@ -1,12 +1,12 @@
 use crate::compilers::CompiledCode;
-use std::{fmt::Debug};
+use std::fmt::Debug;
 
-#[cfg(feature = "wasm")]
-pub mod wasm_runtime;
-#[cfg(feature = "native")]
-pub mod native_runtime;
 #[cfg(all(feature = "jailed", feature = "native"))]
 pub mod jailed_runtime;
+#[cfg(feature = "native")]
+pub mod native_runtime;
+#[cfg(feature = "wasm")]
+pub mod wasm_runtime;
 
 /// Trait for every code runtime.
 /// Represents a runtime that can be used to run some code.
@@ -18,9 +18,13 @@ pub trait CodeRuntime: Send + Sync + Sized {
     type AdditionalData: Send + Sync + Sized + Debug + Clone + Default;
     /// Error type for the runtime.
     type Error: Send + Sync + Sized + 'static;
-    
+
     /// Run compiled code. Returns saved output (if any) and exit code.
-    fn run(&self, code: &CompiledCode<Self>, config: Self::Config) -> Result<ExecutionResult, Self::Error>;
+    fn run(
+        &self,
+        code: &CompiledCode<Self>,
+        config: Self::Config,
+    ) -> Result<ExecutionResult, Self::Error>;
 }
 
 /// Result of running code.
@@ -29,7 +33,7 @@ pub struct ExecutionResult {
     /// Output of the code (if any).
     pub stdout: Option<String>,
     /// Error of the code (if any).
-    pub stderr: Option<String>, 
+    pub stderr: Option<String>,
     /// Time taken by the code to run.
     pub time_taken: std::time::Duration,
     /// Exit code of the code.
