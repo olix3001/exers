@@ -154,6 +154,7 @@ mod tests {
 
     use super::*;
 
+    #[cfg(feature = "wasm")]
     #[test]
     fn test_wasm_runtime() {
         let code = r#"
@@ -168,6 +169,7 @@ mod tests {
         assert_eq!(result.stdout, Some("Hello, world!\n".to_owned()));
     }
 
+    #[cfg(feature = "wasm")]
     #[test]
     fn test_wasm_runtime_with_input() {
         let code = r#"
@@ -187,6 +189,7 @@ mod tests {
         assert_eq!(result.stdout, Some("Hello, world!\n".to_owned()));
     }
 
+    #[cfg(feature = "wasm")]
     #[test]
     fn test_wasm_time_measurement() {
         let code = r#"

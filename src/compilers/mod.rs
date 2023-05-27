@@ -4,6 +4,7 @@ use tempfile::TempDir;
 
 use crate::runtimes::CodeRuntime;
 
+#[cfg(feature = "rust")]
 pub mod rust_compiler;
 
 /// Trait for every compiler that can be used to compile some code.

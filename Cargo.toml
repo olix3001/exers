@@ -9,9 +9,18 @@ license = "MIT"
 readme = "README.md"
 keywords = ["sandbox", "wasm", "rust", "compile"]
 
+[features]
+default = ["wasm", "rust"]
+
+# Runtimes
+wasm = ["wasmtime", "wasmtime-wasi", "wasi-common"]
+
+# Languages
+rust = []
+
 [dependencies]
 derivative = "2.2.0"
 tempfile = "3.5.0"
-wasi-common = "9.0.1"
-wasmtime = "9.0.1"
-wasmtime-wasi = "9.0.1"
+wasi-common = { version = "9.0.1", optional = true }
+wasmtime = { version = "9.0.1", optional = true }
+wasmtime-wasi = { version = "9.0.1", optional = true }

@@ -1,6 +1,6 @@
 use std::{io, sync::{Arc, Mutex}};
 
-use crate::{runtimes::{wasm_runtime::WasmRuntime, CodeRuntime}, common::compiler::OptLevel};
+use crate::{runtimes::CodeRuntime, common::compiler::OptLevel};
 
 use super::{Compiler, CompiledCode, IntoArgs};
 
@@ -118,6 +118,9 @@ impl IntoArgs for RustCompilerConfig {
 }
 
 /// Compiler for wasm runtime.
+#[cfg(feature = "wasm")]
+use crate::runtimes::wasm_runtime::WasmRuntime;
+#[cfg(feature = "wasm")]
 impl Compiler<WasmRuntime> for RustCompiler {
     type Config = RustCompilerConfig;
 
@@ -132,11 +135,12 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_compile() {
+    #[cfg(feature = "wasm")]
+    fn test_compile_wasm() {
         let mut code = "fn main() { println!(\"Hello, world!\"); }".as_bytes();
         let config = RustCompilerConfig::default();
 
-        let compiled_code = RustCompiler.compile(&mut code, config).unwrap();
+        let compiled_code: CompiledCode<WasmRuntime> = RustCompiler.compile(&mut code, config).unwrap();
         let executable = compiled_code.executable.as_ref().unwrap();
 
         assert!(executable.exists());

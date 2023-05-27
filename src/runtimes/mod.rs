@@ -1,6 +1,7 @@
 use crate::compilers::CompiledCode;
 use std::{fmt::Debug};
 
+#[cfg(feature = "wasm")]
 pub mod wasm_runtime;
 
 /// Trait for every code runtime.
