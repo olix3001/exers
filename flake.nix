@@ -1,5 +1,5 @@
 {
-  description = "SIO3 programming competition platform";
+  description = "Exers is a rust library for compiling and running code in different languages and runtimes.";
 
   inputs = {
     nixpkgs.url      = "github:NixOS/nixpkgs/nixos-unstable";
