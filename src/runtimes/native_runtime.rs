@@ -125,7 +125,7 @@ mod tests {
     use crate::compilers::{rust_compiler::RustCompiler, Compiler};
 
     use super::*;
-
+    
     #[test]
     fn test_native_runtime() {
         let code = r#"

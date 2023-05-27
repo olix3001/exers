@@ -24,7 +24,7 @@ impl CppCompiler {
             output_name: &str
         ) -> io::Result<CompiledCode<R>> where Self: Compiler<R> {
         // Create temporary directory for code and executable.
-        let temp_dir = tempfile::Builder::new().prefix("exers-").tempdir()?;
+        let temp_dir = tempfile::Builder::new().prefix("exerscpp-").tempdir()?;
 
         // Create temporary file for code.
         let mut code_file = tempfile::Builder::new().prefix("code-").suffix(".cpp").tempfile_in(temp_dir.path())?;
@@ -109,8 +109,14 @@ impl Compiler<WasmRuntime> for CppCompiler {
     type Config = CppCompilerConfig;
 
     fn compile(&self, code: &mut impl io::Read, config: Self::Config) -> io::Result<CompiledCode<WasmRuntime>> {
-        check_program_installed("wasic++");
-        self.compile_with_args(code, "wasic++", config, &[], "executable.wasm")
+        check_program_installed("clang++");
+        let sysroot_path = std::env::var("WASI_SYSROOT")
+            .expect("WASI_SYSROOT environment variable not set. Consider installing wasi-sdk or wasi-libc.");
+
+        self.compile_with_args(code, "clang++", config, &[
+            "--target=wasm32-wasi",
+            format!("--sysroot={}", sysroot_path).as_str()
+        ], "executable.wasm")
     }
 }
 
@@ -131,6 +137,7 @@ impl Compiler<NativeRuntime> for CppCompiler {
 mod tests {
     use super::*;
 
+    #[cfg(feature = "native")]
     #[test]
     fn test_cpp_native_runtime() {
         let code =r#"
@@ -148,21 +155,22 @@ mod tests {
         assert_eq!(result.exit_code, 0);
     }
 
-    // #[test]
-    // fn test_cpp_compiler_wasm() {
-    //     let code =r#"
-    //         #include <iostream>
-    //         int main() {
-    //             std::cout << "Hello, World!";
-    //             return 0;
-    //         }
-    //     "#;
+    #[cfg(feature = "wasm")]
+    #[test]
+    fn test_cpp_compiler_wasm() {
+        let code =r#"
+            #include <iostream>
+            int main() {
+                std::cout << "Hello, World!";
+                return 0;
+            }
+        "#;
 
-    //     let compiled_code = CppCompiler.compile(&mut code.as_bytes(), Default::default()).unwrap();
-    //     let result = WasmRuntime.run(&compiled_code, Default::default()).unwrap();
+        let compiled_code = CppCompiler.compile(&mut code.as_bytes(), Default::default()).unwrap();
+        let result = WasmRuntime.run(&compiled_code, Default::default()).unwrap();
 
-    //     assert_eq!(result.stdout.unwrap(), "Hello, World!");
-    //     assert_eq!(result.stderr.unwrap(), "");
-    //     assert_eq!(result.exit_code, 0);
-    // }
+        assert_eq!(result.stdout.unwrap(), "Hello, World!");
+        assert_eq!(result.stderr.unwrap(), "");
+        assert_eq!(result.exit_code, 0);
+    }
 }

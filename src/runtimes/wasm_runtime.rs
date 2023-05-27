@@ -1,9 +1,8 @@
-use std::{io::BufReader, fs::File, str::from_utf8};
+use std::{io::{Read, Write}, fs::File};
 
 use crate::{compilers::CompiledCode, common::runtime::InputData};
 
 use super::{CodeRuntime, ExecutionResult};
-use wasmtime_wasi::WasiCtxBuilder;
 
 /// Runtime for wasm code.
 /// This uses `wasmtime` to run the code.
@@ -20,9 +19,6 @@ pub struct WasmConfig {
 
     /// File containing stdin to be used by the code.
     pub stdin: InputData,
-
-    /// Custom wasm config.
-    pub custom_config: wasmtime::Config
 }
 
 
@@ -31,7 +27,6 @@ impl Default for WasmConfig {
         Self {
             max_run_time: 0,
             stdin: InputData::Ignore,
-            custom_config: wasmtime::Config::default()
         }
     }
 }
@@ -43,97 +38,74 @@ impl CodeRuntime for WasmRuntime {
     /// Additional compilation data.
     type AdditionalData = ();
     /// Error type for the runtime.
-    type Error = wasmtime::Error;
+    type Error = Box<dyn std::error::Error + Send + Sync>;
 
     /// Uses `wasmtime` to run the code.
     fn run(&self, code: &CompiledCode<Self>, config: Self::Config) -> Result<ExecutionResult, Self::Error> {
-        // Create config for wasmtime.
-        let wasm_config = config.custom_config;
+        // Create store.
+        let mut store = wasmer::Store::default();
+        let module = wasmer::Module::from_file(&store, &code.executable.as_ref().unwrap())?;
 
-        // Create wasi pipes.
-        let stdout = wasi_common::pipe::WritePipe::new_in_memory();
-        let stderr = wasi_common::pipe::WritePipe::new_in_memory();
+        // Crate wasi pipes.
+        let (mut stdin_tx, stdin_rx) = wasmer_wasix::Pipe::channel();
+        let (stdout_tx, mut stdout_rx) = wasmer_wasix::Pipe::channel();
+        let (stderr_tx, mut stderr_rx) = wasmer_wasix::Pipe::channel();
 
-        // Ensure everything is dropped before we try to read from the pipes.
-        let time_taken = {
-            // Create wasmtime engine.
-            let engine = wasmtime::Engine::new(&wasm_config)?;
-
-            // Read module from file.
-            let module = wasmtime::Module::from_file(&engine, &code.executable.as_ref().unwrap())?;
-
-            // Create wasmtime linker.
-            let mut linker = wasmtime::Linker::new(&engine);
-            wasmtime_wasi::add_to_linker(&mut linker, |s| s)?;
-
-            // Create wasi context.
-            let mut wasi = WasiCtxBuilder::new()
-                .stdout(Box::new(stdout.clone()))
-                .stderr(Box::new(stderr.clone()));
-
-            // And more pipes.
-            match config.stdin {
-                InputData::File(path) => {
-                    let file = File::open(path)?;
-                    let reader = BufReader::new(file);
-                    let stdin = wasi_common::pipe::ReadPipe::new(reader);
-                    wasi = wasi.stdin(Box::new(stdin));
-                },
-                InputData::String(string) => {
-                    let stdin = wasi_common::pipe::ReadPipe::from(string);
-                    wasi = wasi.stdin(Box::new(stdin));
-                },
-                InputData::Ignore => {}
-            }
-
-            // Build wasi context.
-            let wasi = wasi.build();
-
-            // Create wasmtime store.
-            let mut store = wasmtime::Store::new(&engine, wasi);
-
-            // Link module.
-            linker.module(&mut store, "", &module)?;
-
-            // Get and run main function.
-            let main_fn = linker
-                .get_default(&mut store, "")?
-                .typed::<(), ()>(&store)?;
-            
-            // Start timer.
-            let start = std::time::Instant::now();
-            // Run main function.
-            main_fn.call(&mut store, ())?;
-            // Stop timer.
-            let time_taken = start.elapsed();
-
-            // Explicitly drop store.
-            drop(store);
-            
-            time_taken
-        };
-
-        // Parse stdout and stderr into strings.
-        let stdout = match stdout.try_into_inner() {
-            Ok(stdout) => {
-                // Read stdout into string.
-                from_utf8(stdout.into_inner().as_slice()).map(|s| s.to_owned()).ok()
+        // Write stdin to pipe.
+        match &config.stdin {
+            InputData::String(input) => {
+                stdin_tx.write_all(input.as_bytes())?;
+                stdin_tx.write(b"\n")?; // Add a newline to the end of input.
             },
-            Err(_) => None
-        };
-
-        let stderr = match stderr.try_into_inner() {
-            Ok(stderr) => {
-                // Read stderr into string.
-                from_utf8(stderr.into_inner().as_slice()).map(|s| s.to_owned()).ok()
+            InputData::File(path) => {
+                let mut file = File::open(path)?;
+                let mut buf = Vec::new();
+                file.read_to_end(&mut buf)?;
+                stdin_tx.write_all(&buf)?;
             },
-            Err(_) => None
-        };
+            InputData::Ignore => {},
+        }
 
-        // Return execution result.
+        // Create wasi instance.
+        let mut wasi_env = wasmer_wasix::WasiEnv::builder("wasi_program")
+            .stdin(Box::new(stdin_rx))
+            .stdout(Box::new(stdout_tx))
+            .stderr(Box::new(stderr_tx))
+            .finalize(&mut store)?;
+
+        // Initialize wasi instance.
+        let import_object = wasi_env.import_object(&mut store, &module)?;
+        let instance = wasmer::Instance::new(&mut store, &module, &import_object)?;
+
+        // Initialize wasi env.
+        wasi_env.initialize(&mut store, instance.clone())?;
+
+        // Get _start function.
+        let start = instance.exports.get_function("_start")?;
+
+        // Start time measurement.
+        let start_time = std::time::Instant::now();
+
+        // Run
+        start.call(&mut store, &[])?;
+
+        // End time measurement.
+        let time_taken = start_time.elapsed();
+
+        // Cleanup wasi env.
+        wasi_env.cleanup(&mut store, None);
+
+        // Get output from pipes.
+        let mut stdout = String::new();
+        let mut stderr = String::new();
+
+        // Read pipes
+        stdout_rx.read_to_string(&mut stdout)?;
+        stderr_rx.read_to_string(&mut stderr)?;
+
         Ok(ExecutionResult {
-            stdout,
-            stderr,
+            stdout: Some(stdout),
+            stderr: Some(stderr),
             time_taken,
             exit_code: 0,
         })
@@ -146,7 +118,6 @@ mod tests {
 
     use super::*;
 
-    #[cfg(feature = "wasm")]
     #[test]
     fn test_wasm_runtime() {
         let code = r#"
@@ -161,7 +132,6 @@ mod tests {
         assert_eq!(result.stdout, Some("Hello, world!\n".to_owned()));
     }
 
-    #[cfg(feature = "wasm")]
     #[test]
     fn test_wasm_runtime_with_input() {
         let code = r#"
@@ -181,7 +151,6 @@ mod tests {
         assert_eq!(result.stdout, Some("Hello, world!\n".to_owned()));
     }
 
-    #[cfg(feature = "wasm")]
     #[test]
     fn test_wasm_time_measurement() {
         let code = r#"

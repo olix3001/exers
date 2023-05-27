@@ -23,8 +23,8 @@ fn main() {
 
 | Language | Supported Runtimes | Required Dependencies |
 | -------- | ------------------ | --------------------- |
-| Rust     | Wasm               | Rustc                 |
-| C++      | None               | ---                   |
+| Rust     | Wasm, Native       | Rustc                 |
+| C++      | Native             | clang++               |
 | Python   | None               | ---                   |
 | Java     | None               | ---                   |
 | C#       | None               | ---                   |
