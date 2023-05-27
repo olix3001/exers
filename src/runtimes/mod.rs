@@ -22,6 +22,8 @@ pub struct ExecutionResult {
     pub stdout: Option<String>,
     /// Error of the code (if any).
     pub stderr: Option<String>, 
+    /// Time taken by the code to run.
+    pub time_taken: std::time::Duration,
     /// Exit code of the code.
     pub exit_code: i32,
 }

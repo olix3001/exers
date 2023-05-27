@@ -4,7 +4,10 @@ version = "0.1.0"
 edition = "2021"
 authors = ["Oliwier Michalik"]
 description = "Library for compiling and running other code in sandboxed environment"
-
+repository = "https://github.com/olix3001/exers/"
+license = "MIT"
+readme = "README.md"
+keywords = ["sandbox", "wasm", "rust", "compile"]
 
 [dependencies]
 derivative = "2.2.0"

@@ -4,7 +4,7 @@ use tempfile::TempDir;
 
 use crate::runtimes::CodeRuntime;
 
-pub mod rust;
+pub mod rust_compiler;
 
 /// Trait for every compiler that can be used to compile some code.
 pub trait Compiler<R: CodeRuntime>: Send + Sync + Sized {

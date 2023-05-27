@@ -61,7 +61,7 @@ impl CodeRuntime for WasmRuntime {
         let stderr = wasi_common::pipe::WritePipe::new_in_memory();
 
         // Ensure everything is dropped before we try to read from the pipes.
-        {
+        let time_taken = {
             // Create wasmtime engine.
             let engine = wasmtime::Engine::new(&wasm_config)?;
 
@@ -102,14 +102,22 @@ impl CodeRuntime for WasmRuntime {
             linker.module(&mut store, "", &module)?;
 
             // Get and run main function.
-            linker
+            let main_fn = linker
                 .get_default(&mut store, "")?
-                .typed::<(), ()>(&store)?
-                .call(&mut store, ())?;
+                .typed::<(), ()>(&store)?;
+            
+            // Start timer.
+            let start = std::time::Instant::now();
+            // Run main function.
+            main_fn.call(&mut store, ())?;
+            // Stop timer.
+            let time_taken = start.elapsed();
 
             // Explicitly drop store.
             drop(store);
-        }
+            
+            time_taken
+        };
 
         // Parse stdout and stderr into strings.
         let stdout = match stdout.try_into_inner() {
@@ -132,6 +140,7 @@ impl CodeRuntime for WasmRuntime {
         Ok(ExecutionResult {
             stdout,
             stderr,
+            time_taken,
             exit_code: 0,
         })
     }
@@ -139,7 +148,7 @@ impl CodeRuntime for WasmRuntime {
 
 #[cfg(test)]
 mod tests {
-    use crate::compilers::{rust::{RustCompiler}, Compiler};
+    use crate::compilers::{rust_compiler::RustCompiler, Compiler};
 
     use super::*;
 
@@ -174,5 +183,25 @@ mod tests {
         }).unwrap();
     
         assert_eq!(result.stdout, Some("Hello, world!\n".to_owned()));
+    }
+
+    #[test]
+    fn test_wasm_time_measurement() {
+        let code = r#"
+            fn main() {
+                let mut input = String::new();
+                std::io::stdin().read_line(&mut input).unwrap();
+                println!("Hello, {}!", input.trim());
+            }
+        "#;
+
+        let compiled_code = RustCompiler.compile(&mut code.as_bytes(), Default::default()).unwrap();
+        let result = WasmRuntime::run(&compiled_code, WasmConfig {
+            stdin: InputData::String("world".to_owned()),
+            ..Default::default()
+        }).unwrap();
+    
+        assert_eq!(result.stdout, Some("Hello, world!\n".to_owned()));
+        assert!(result.time_taken.as_nanos() > 0);
     }
 }

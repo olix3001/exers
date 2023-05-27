@@ -5,7 +5,8 @@ use crate::{runtimes::{wasm_runtime::WasmRuntime, CodeRuntime}, common::compiler
 use super::{Compiler, CompiledCode, IntoArgs};
 
 /// Rust compiler.
-/// Compiles code using `rustc` command.
+/// Compiles code using `rustc` command. <br/>
+/// For configuration options see [`RustCompilerConfig`].
 #[derive(Debug, Clone)]
 pub struct RustCompiler;
 
@@ -60,10 +61,22 @@ impl RustCompiler {
 /// Configuration for rust compiler.
 #[derive(Debug, Clone)]
 pub struct RustCompilerConfig {
-    /// Opt level for rust compiler.
+    /// Opt level for rust compiler. <br/>
+    /// This is passed to `rustc` command using `-C opt-level=<level>` argument.
     pub opt_level: OptLevel,
-    /// Codegen units for rust compiler.
+    /// Codegen units for rust compiler. <br/>
+    /// This is passed to `rustc` command using `-C codegen-units=<units>` argument.
     pub codegen_units: u32,
+}
+
+impl RustCompilerConfig {
+    /// Creates new fully optimized configuration.
+    pub fn optimized() -> Self {
+        Self {
+            opt_level: OptLevel::O3,
+            codegen_units: 1
+        }
+    }
 }
 
 // Default configuration for rust compiler.

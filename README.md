@@ -19,14 +19,22 @@ fn main() {
 }
 ```
 
-## Supported languages and their runtimes
+## Supported languages :books:
 
-| Language | Runtimes |
-| -------- | -------- |
-| Rust     | Wasm     |
+| Language | Supported Runtimes | Required Dependencies |
+| -------- | ------------------ | --------------------- |
+| Rust     | Wasm               | Rustc                 |
+| C++      | None               | ---                   |
+| Python   | None               | ---                   |
+| Java     | None               | ---                   |
+| C#       | None               | ---                   |
+| Go       | None               | ---                   |
+| Ruby     | None               | ---                   |
 
-## Available runtimes
+## Available runtimes :running_man:
 
 | Runtime | Status                                       |
 | ------- | -------------------------------------------- |
 | WASM    | In development, not ready for production use |
+| Native  | Not started                                  |
+| Jailed  | Not started                                  |
