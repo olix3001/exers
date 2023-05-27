@@ -5,6 +5,8 @@ use std::{fmt::Debug};
 pub mod wasm_runtime;
 #[cfg(feature = "native")]
 pub mod native_runtime;
+#[cfg(all(feature = "jailed", feature = "native"))]
+pub mod jailed_runtime;
 
 /// Trait for every code runtime.
 /// Represents a runtime that can be used to run some code.
@@ -18,7 +20,7 @@ pub trait CodeRuntime: Send + Sync + Sized {
     type Error: Send + Sync + Sized + 'static;
     
     /// Run compiled code. Returns saved output (if any) and exit code.
-    fn run(code: &CompiledCode<Self>, config: Self::Config) -> Result<ExecutionResult, Self::Error>;
+    fn run(&self, code: &CompiledCode<Self>, config: Self::Config) -> Result<ExecutionResult, Self::Error>;
 }
 
 /// Result of running code.

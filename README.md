@@ -33,8 +33,9 @@ fn main() {
 
 ## Available runtimes :running_man:
 
-| Runtime | Status                                       |
-| ------- | -------------------------------------------- |
-| WASM    | In development, not ready for production use |
-| Native  | Not started                                  |
-| Jailed  | Not started                                  |
+| Runtime     | Status                                       |
+| ----------- | -------------------------------------------- |
+| WASM        | In development, not ready for production use |
+| Native      | Not started                                  |
+| Jailed      | Not started                                  |
+| Firecracker | Not started                                  |

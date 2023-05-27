@@ -10,11 +10,12 @@ readme = "README.md"
 keywords = ["sandbox", "wasm", "rust", "compile"]
 
 [features]
-default = ["wasm", "native", "rust", "cpp"]
+default = ["wasm", "native", "rust", "cpp", "jailed"]
 
 # Runtimes
 wasm = ["wasmtime", "wasmtime-wasi", "wasi-common"]
 native = []
+jailed = ["native"]
 
 # Languages
 rust = []

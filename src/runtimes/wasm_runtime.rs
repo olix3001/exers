@@ -46,7 +46,7 @@ impl CodeRuntime for WasmRuntime {
     type Error = wasmtime::Error;
 
     /// Uses `wasmtime` to run the code.
-    fn run(code: &CompiledCode<Self>, config: Self::Config) -> Result<ExecutionResult, Self::Error> {
+    fn run(&self, code: &CompiledCode<Self>, config: Self::Config) -> Result<ExecutionResult, Self::Error> {
         // Create config for wasmtime.
         let wasm_config = config.custom_config;
 
@@ -156,7 +156,7 @@ mod tests {
         "#;
 
         let compiled_code = RustCompiler.compile(&mut code.as_bytes(), Default::default()).unwrap();
-        let result = WasmRuntime::run(&compiled_code, Default::default()).unwrap();
+        let result = WasmRuntime.run(&compiled_code, Default::default()).unwrap();
     
         assert_eq!(result.stdout, Some("Hello, world!\n".to_owned()));
     }
@@ -173,7 +173,7 @@ mod tests {
         "#;
 
         let compiled_code = RustCompiler.compile(&mut code.as_bytes(), Default::default()).unwrap();
-        let result = WasmRuntime::run(&compiled_code, WasmConfig {
+        let result = WasmRuntime.run(&compiled_code, WasmConfig {
             stdin: InputData::String("world".to_owned()),
             ..Default::default()
         }).unwrap();
@@ -193,7 +193,7 @@ mod tests {
         "#;
 
         let compiled_code = RustCompiler.compile(&mut code.as_bytes(), Default::default()).unwrap();
-        let result = WasmRuntime::run(&compiled_code, WasmConfig {
+        let result = WasmRuntime.run(&compiled_code, WasmConfig {
             stdin: InputData::String("world".to_owned()),
             ..Default::default()
         }).unwrap();

@@ -52,7 +52,7 @@ impl CodeRuntime for NativeRuntime {
     type Error = std::io::Error;
 
     /// Runs the code natively on the server.
-    fn run(code: &crate::compilers::CompiledCode<Self>, config: Self::Config) -> Result<super::ExecutionResult, Self::Error> {
+    fn run(&self, code: &crate::compilers::CompiledCode<Self>, config: Self::Config) -> Result<super::ExecutionResult, Self::Error> {
         // Create new process.
         let mut process = match &code.additional_data.program {
             Some(program) => std::process::Command::new(program),
@@ -135,7 +135,7 @@ mod tests {
         "#;
 
         let compiled_code = RustCompiler.compile(&mut code.as_bytes(), Default::default()).unwrap();
-        let result = NativeRuntime::run(&compiled_code, Default::default()).unwrap();
+        let result = NativeRuntime.run(&compiled_code, Default::default()).unwrap();
 
         assert_eq!(result.stdout, Some("Hello, world!\n".to_owned()));
     }

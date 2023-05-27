@@ -142,7 +142,7 @@ mod tests {
         "#;
 
         let compiled_code = CppCompiler.compile(&mut code.as_bytes(), Default::default()).unwrap();
-        let result = NativeRuntime::run(&compiled_code, Default::default()).unwrap();
+        let result = NativeRuntime.run(&compiled_code, Default::default()).unwrap();
 
         assert_eq!(result.stdout.unwrap(), "Hello, World!");
         assert_eq!(result.exit_code, 0);
@@ -159,7 +159,7 @@ mod tests {
     //     "#;
 
     //     let compiled_code = CppCompiler.compile(&mut code.as_bytes(), Default::default()).unwrap();
-    //     let result = WasmRuntime::run(&compiled_code, Default::default()).unwrap();
+    //     let result = WasmRuntime.run(&compiled_code, Default::default()).unwrap();
 
     //     assert_eq!(result.stdout.unwrap(), "Hello, World!");
     //     assert_eq!(result.stderr.unwrap(), "");
