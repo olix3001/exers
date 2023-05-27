@@ -36,6 +36,6 @@ fn main() {
 | Runtime     | Status                                       |
 | ----------- | -------------------------------------------- |
 | WASM        | In development, not ready for production use |
-| Native      | Not started                                  |
-| Jailed      | Not started                                  |
+| Native      | Implemented                                  |
+| Jailed      | In development, not working                  |
 | Firecracker | Not started                                  |
