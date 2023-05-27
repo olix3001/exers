@@ -8,6 +8,9 @@ pub mod wasm_runtime;
 pub trait CodeRuntime: Send + Sync + Sized {
     /// Configuration for the runtime.
     type Config: Send + Sync + Sized + Debug + Clone + Default;
+    /// Additional compilation data.
+    /// This is used to pass additional data from the compiler to the runtime.
+    type AdditionalData: Send + Sync + Sized + Debug + Clone + Default;
     /// Error type for the runtime.
     type Error: Send + Sync + Sized + 'static;
     

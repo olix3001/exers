@@ -48,6 +48,8 @@ impl Default for WasmConfig {
 impl CodeRuntime for WasmRuntime {
     /// Configuration for the runtime.
     type Config = WasmConfig;
+    /// Additional compilation data.
+    type AdditionalData = ();
     /// Error type for the runtime.
     type Error = wasmtime::Error;
 

@@ -53,6 +53,7 @@ impl RustCompiler {
         Ok(CompiledCode {
             executable: Some(temp_dir.path().join("executable.wasm")),
             temp_dir_handle: Arc::new(Mutex::new(Some(temp_dir))),
+            additional_data: R::AdditionalData::default(),
             runtime_marker: std::marker::PhantomData
         })
     }

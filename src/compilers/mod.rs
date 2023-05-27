@@ -24,10 +24,14 @@ pub struct CompiledCode<R: CodeRuntime> {
 
     /// Handle to the temporary directory.
     /// This is used to clean up the temporary directory when this object is dropped.
-    temp_dir_handle: Arc<Mutex<Option<TempDir>>>,
+    pub temp_dir_handle: Arc<Mutex<Option<TempDir>>>,
+
+    /// Additional data for the runtime.
+    /// This can differ for different runtimes.
+    pub additional_data: R::AdditionalData,
 
     /// Runtime marker.
-    runtime_marker: std::marker::PhantomData<R>
+    pub runtime_marker: std::marker::PhantomData<R>,
 }
 
 impl <R: CodeRuntime> CompiledCode<R> {
