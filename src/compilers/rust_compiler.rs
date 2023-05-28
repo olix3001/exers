@@ -4,7 +4,7 @@ use std::{
 };
 
 use crate::{
-    common::compiler::{check_program_installed, OptLevel},
+    common::compiler::{check_program_installed, CompilationError, CompilationResult, OptLevel},
     runtimes::CodeRuntime,
 };
 
@@ -27,7 +27,7 @@ impl RustCompiler {
         config: RustCompilerConfig,
         args: &[&str],
         output_name: &str,
-    ) -> io::Result<CompiledCode<R>>
+    ) -> CompilationResult<CompiledCode<R>>
     where
         Self: Compiler<R>,
     {
@@ -45,7 +45,7 @@ impl RustCompiler {
 
         // Compile the code using `rustc` command with given arguments.
         let mut command = std::process::Command::new("rustc");
-        command.stderr(std::process::Stdio::null());
+        command.stderr(std::process::Stdio::piped());
         command.stdout(std::process::Stdio::null());
         command.stdin(std::process::Stdio::null());
         command.current_dir(temp_dir.path());
@@ -64,7 +64,9 @@ impl RustCompiler {
 
         // Check if compilation was successful.
         if !output.status.success() {
-            return Err(io::Error::new(io::ErrorKind::Other, "Compilation failed."));
+            return Err(CompilationError::CompilationFailed(
+                String::from_utf8_lossy(&output.stderr).into(),
+            ));
         }
 
         // Return compiled code.
@@ -141,7 +143,7 @@ impl Compiler<WasmRuntime> for RustCompiler {
         &self,
         code: &mut impl io::Read,
         config: RustCompilerConfig,
-    ) -> io::Result<CompiledCode<WasmRuntime>> {
+    ) -> CompilationResult<CompiledCode<WasmRuntime>> {
         // Compile the code using `rustc` command with given arguments.
         self.compile_with_args(
             code,
@@ -163,7 +165,7 @@ impl Compiler<NativeRuntime> for RustCompiler {
         &self,
         code: &mut impl io::Read,
         config: RustCompilerConfig,
-    ) -> io::Result<CompiledCode<NativeRuntime>> {
+    ) -> CompilationResult<CompiledCode<NativeRuntime>> {
         // Compile the code using `rustc` command with given arguments.
         self.compile_with_args(code, config, &[], "executable")
     }

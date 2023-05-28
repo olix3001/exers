@@ -7,14 +7,14 @@ use std::{
 
 use tempfile::TempDir;
 
-use crate::runtimes::CodeRuntime;
+use crate::{common::compiler::CompilationResult, runtimes::CodeRuntime};
 
 #[cfg(feature = "cpp")]
 pub mod cpp_compiler;
-#[cfg(feature = "rust")]
-pub mod rust_compiler;
+
 #[cfg(feature = "python")]
 pub mod python_compiler;
+pub mod rust_compiler;
 
 /// Trait for every compiler that can be used to compile some code.
 pub trait Compiler<R: CodeRuntime>: Send + Sync + Sized {
@@ -26,7 +26,7 @@ pub trait Compiler<R: CodeRuntime>: Send + Sync + Sized {
         &self,
         code: &mut impl io::Read,
         config: Self::Config,
-    ) -> io::Result<CompiledCode<R>>;
+    ) -> CompilationResult<CompiledCode<R>>;
 }
 
 /// Compiled code (executable).

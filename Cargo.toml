@@ -10,7 +10,7 @@ readme = "README.md"
 keywords = ["sandbox", "wasm", "rust", "compile"]
 
 [features]
-default = ["wasm", "native", "rust", "cpp", "python", "jailed"]
+default = ["wasm", "native", "cpp", "python", "jailed"]
 
 # Runtimes
 wasm = ["wasmer", "wasmer-wasix", "wasmer-middlewares"]
@@ -18,7 +18,6 @@ native = []
 jailed = ["native"]
 
 # Languages
-rust = []
 cpp = []
 python = []
 

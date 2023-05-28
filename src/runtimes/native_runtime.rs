@@ -61,7 +61,7 @@ impl CodeRuntime for NativeRuntime {
                 let mut cmd = std::process::Command::new(program);
                 cmd.arg(&code.executable.as_ref().unwrap());
                 cmd
-            },
+            }
             None => std::process::Command::new(&code.executable.as_ref().unwrap()),
         };
 

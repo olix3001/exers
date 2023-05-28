@@ -1,3 +1,5 @@
+use std::{error::Error, fmt::Display};
+
 /// Enum for opt level
 /// Some compilers may not support all opt levels
 #[derive(Debug, Clone)]
@@ -42,3 +44,35 @@ pub fn check_program_installed(program: &str) {
         );
     }
 }
+
+/// Error for compiler.
+#[derive(Debug)]
+pub enum CompilationError {
+    /// IO error.
+    /// This is returned when there is an error while reading or writing to file.
+    IoError(std::io::Error),
+
+    /// Error while compiling.
+    /// This is returned when compiler returns non-zero exit code.
+    /// This contains stderr of compiler.
+    CompilationFailed(String),
+}
+
+impl From<std::io::Error> for CompilationError {
+    fn from(e: std::io::Error) -> Self {
+        Self::IoError(e)
+    }
+}
+
+/// Type for convinient result of compiler.
+pub type CompilationResult<T> = Result<T, CompilationError>;
+
+impl Display for CompilationError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            CompilationError::IoError(e) => write!(f, "IO error: {}", e),
+            CompilationError::CompilationFailed(e) => write!(f, "Compilation failed: {}", e),
+        }
+    }
+}
+impl Error for CompilationError {}

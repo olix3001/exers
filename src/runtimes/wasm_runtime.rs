@@ -105,6 +105,41 @@ pub struct WasmAdditionalData {
     pub args: Vec<String>,
 }
 
+/// Wasm runtime error.
+macro_rules! impl_wasm_error {
+    ($($errn:ident $(=> $ft:ty)?),*) => {
+        /// Wasm runtime error.
+        /// This contains all possible errors that can occur while running the code.
+        #[derive(Debug)]
+        pub enum WasmRuntimeError {
+            $(
+                $errn $(($ft))?,
+            )*
+        }
+
+        $(
+            $(
+                impl From<$ft> for WasmRuntimeError {
+                    fn from(err: $ft) -> Self {
+                        Self::$errn(err)
+                    }
+                }
+            )?
+        )*
+    };
+}
+
+// Implementation of all errors.
+impl_wasm_error!(
+    IOCompileError => wasmer::IoCompileError,
+    IOError => std::io::Error,
+    WasiRuntimeError => wasmer_wasix::WasiRuntimeError,
+    WasiError => wasmer_wasix::WasiError,
+    InstantiationError => wasmer::InstantiationError,
+    ExportError => wasmer::ExportError,
+    RuntimeError => wasmer::RuntimeError
+);
+
 /// Runtime for wasm code.
 impl CodeRuntime for WasmRuntime {
     /// Configuration for the runtime.
@@ -112,7 +147,7 @@ impl CodeRuntime for WasmRuntime {
     /// Additional compilation data.
     type AdditionalData = WasmAdditionalData;
     /// Error type for the runtime.
-    type Error = Box<dyn std::error::Error + Send + Sync>;
+    type Error = WasmRuntimeError;
 
     /// Uses `wasmtime` to run the code.
     fn run(
@@ -193,7 +228,6 @@ impl CodeRuntime for WasmRuntime {
 
         // Get _start function.
         let start = instance.exports.get_function("_start")?;
-        
 
         // Start time measurement.
         let start_time = std::time::Instant::now();

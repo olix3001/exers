@@ -4,7 +4,7 @@ use std::{
 };
 
 use crate::{
-    common::compiler::{check_program_installed, OptLevel},
+    common::compiler::{check_program_installed, CompilationError, CompilationResult, OptLevel},
     runtimes::CodeRuntime,
 };
 
@@ -28,7 +28,7 @@ impl CppCompiler {
         config: CppCompilerConfig,
         args: &[&str],
         output_name: &str,
-    ) -> io::Result<CompiledCode<R>>
+    ) -> CompilationResult<CompiledCode<R>>
     where
         Self: Compiler<R>,
     {
@@ -44,6 +44,9 @@ impl CppCompiler {
 
         // Compile the code using `rustc` command with given arguments.
         let mut command = std::process::Command::new(command);
+        command.stderr(std::process::Stdio::piped());
+        command.stdout(std::process::Stdio::null());
+        command.stdin(std::process::Stdio::null());
         command.current_dir(temp_dir.path());
         command.args(args);
         command.arg(code_file.path());
@@ -61,7 +64,9 @@ impl CppCompiler {
 
         // Check if compilation was successful.
         if !output.status.success() {
-            return Err(io::Error::new(io::ErrorKind::Other, "Compilation failed."));
+            return Err(CompilationError::CompilationFailed(
+                String::from_utf8_lossy(&output.stderr).to_string(),
+            ));
         }
 
         // Return compiled code.
@@ -80,6 +85,9 @@ pub struct CppCompilerConfig {
     /// Opt level for C++ compiler. <br/>
     /// This is passed to `clang++` command using `-O<level>` argument.
     pub opt_level: OptLevel,
+
+    /// Additional flags for C++ compiler.
+    pub additional_flags: Vec<String>,
 }
 
 impl CppCompilerConfig {
@@ -87,6 +95,7 @@ impl CppCompilerConfig {
     pub fn optimized() -> Self {
         Self {
             opt_level: OptLevel::O3,
+            ..Default::default()
         }
     }
 }
@@ -96,6 +105,7 @@ impl Default for CppCompilerConfig {
     fn default() -> Self {
         Self {
             opt_level: OptLevel::None,
+            additional_flags: Vec::new(),
         }
     }
 }
@@ -108,6 +118,9 @@ impl IntoArgs for CppCompilerConfig {
         if !matches!(self.opt_level, OptLevel::None) {
             args.push(format!("-O{}", self.opt_level.as_stanard_opt_char()));
         }
+
+        // Add additional flags.
+        args.extend(self.additional_flags);
 
         args
     }
@@ -124,7 +137,7 @@ impl Compiler<WasmRuntime> for CppCompiler {
         &self,
         code: &mut impl io::Read,
         config: Self::Config,
-    ) -> io::Result<CompiledCode<WasmRuntime>> {
+    ) -> CompilationResult<CompiledCode<WasmRuntime>> {
         check_program_installed("clang++");
         let sysroot_path = std::env::var("WASI_SYSROOT").expect(
             "WASI_SYSROOT environment variable not set. Consider installing wasi-sdk or wasi-libc.",
@@ -154,7 +167,7 @@ impl Compiler<NativeRuntime> for CppCompiler {
         &self,
         code: &mut impl io::Read,
         config: Self::Config,
-    ) -> io::Result<CompiledCode<NativeRuntime>> {
+    ) -> CompilationResult<CompiledCode<NativeRuntime>> {
         check_program_installed("clang++");
         self.compile_with_args(code, "clang++", config, &[], "executable")
     }

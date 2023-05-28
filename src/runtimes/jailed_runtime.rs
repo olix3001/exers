@@ -1,4 +1,7 @@
-use crate::compilers::{CompiledCode, Compiler};
+use crate::{
+    common::compiler::CompilationResult,
+    compilers::{CompiledCode, Compiler},
+};
 
 use super::{native_runtime::NativeRuntime, CodeRuntime};
 
@@ -55,7 +58,7 @@ where
         &self,
         code: &mut impl std::io::Read,
         config: Self::Config,
-    ) -> std::io::Result<crate::compilers::CompiledCode<JailedRuntime>> {
+    ) -> CompilationResult<crate::compilers::CompiledCode<JailedRuntime>> {
         let native_code: CompiledCode<NativeRuntime> = C::compile(&self, code, config)?;
         Ok(CompiledCode {
             executable: native_code.executable.clone(),

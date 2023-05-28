@@ -1,10 +1,20 @@
-use std::{fs::File, sync::{Arc, Mutex}};
+use std::{
+    fmt::Debug,
+    fs::File,
+    sync::{Arc, Mutex},
+};
 
-use crate::{runtimes::native_runtime::{NativeRuntime, NativeAdditionalData}, common::compiler::check_program_installed};
+use crate::{
+    common::compiler::CompilationResult,
+    runtimes::native_runtime::{NativeAdditionalData, NativeRuntime},
+};
 
-use super::{IntoArgs, Compiler};
+#[cfg(feature = "cython")]
+use crate::common::compiler::{check_program_installed, CompilationError};
+
 #[cfg(feature = "cython")]
 use super::cpp_compiler::CppCompiler;
+use super::{Compiler, IntoArgs};
 
 /// Python compiler. <br/>
 /// Actually, python is not compiled, but this is used to create a temporary file containing the code. <br/>
@@ -13,8 +23,11 @@ use super::cpp_compiler::CppCompiler;
 pub struct PythonCompiler;
 
 /// Configuration for Python compiler.
-#[derive(Debug, Clone)]
 pub struct PythonCompilerConfig {
+    /// Python version to use. <br/>
+    /// Default is `python3`.
+    pub python_version: String,
+
     /// Whether to use cython to compile the code. <br/>
     /// This option is only available if `cython` feature is enabled.
     #[cfg(feature = "cython")]
@@ -26,9 +39,30 @@ pub struct PythonCompilerConfig {
     pub cpp_config: super::cpp_compiler::CppCompilerConfig,
 }
 
+impl Debug for PythonCompilerConfig {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("PythonCompilerConfig")
+            .field("python_version", &self.python_version)
+            .finish()
+    }
+}
+
+impl Clone for PythonCompilerConfig {
+    fn clone(&self) -> Self {
+        Self {
+            python_version: self.python_version.clone(),
+            #[cfg(feature = "cython")]
+            use_cython: self.use_cython,
+            #[cfg(feature = "cython")]
+            cpp_config: self.cpp_config.clone(),
+        }
+    }
+}
+
 impl Default for PythonCompilerConfig {
     fn default() -> Self {
         Self {
+            python_version: "python3".to_string(),
             #[cfg(feature = "cython")]
             use_cython: false,
             #[cfg(feature = "cython")]
@@ -41,6 +75,7 @@ impl PythonCompilerConfig {
     #[cfg(feature = "cython")]
     fn cython_default() -> Self {
         Self {
+            python_version: "python3".to_string(),
             use_cython: true,
             cpp_config: super::cpp_compiler::CppCompilerConfig::default(),
         }
@@ -50,6 +85,7 @@ impl PythonCompilerConfig {
 impl IntoArgs for PythonCompilerConfig {
     /// Convert this configuration to arguments for `python` command.
     fn into_args(self) -> Vec<String> {
+        #[allow(unused_mut)]
         let mut args: Vec<String> = Vec::new();
 
         #[cfg(feature = "cython")]
@@ -69,15 +105,14 @@ impl Compiler<NativeRuntime> for PythonCompiler {
     /// Configuration for python compiler.
     type Config = PythonCompilerConfig;
 
+    #[allow(unused_variables)]
     fn compile(
         &self,
         code: &mut impl std::io::Read,
         config: Self::Config,
-    ) -> std::io::Result<super::CompiledCode<NativeRuntime>> {
+    ) -> CompilationResult<super::CompiledCode<NativeRuntime>> {
         // Create temporary directory.
-        let temp_dir = tempfile::Builder::new()
-            .prefix("exers-")
-            .tempdir()?;
+        let temp_dir = tempfile::Builder::new().prefix("exers-").tempdir()?;
 
         // Create file with python code
         let mut code_file = File::create(temp_dir.path().join("code.py"))?;
@@ -89,7 +124,7 @@ impl Compiler<NativeRuntime> for PythonCompiler {
             if config.use_cython {
                 check_program_installed("cython");
                 let mut command = std::process::Command::new("cython");
-                command.stderr(std::process::Stdio::null());
+                command.stderr(std::process::Stdio::piped());
                 command.stdout(std::process::Stdio::null());
                 command.stdin(std::process::Stdio::null());
 
@@ -97,10 +132,16 @@ impl Compiler<NativeRuntime> for PythonCompiler {
                 command.arg("code.py");
                 command.arg("-3"); // Python 3
                 command.arg("--cplus"); // C++ instead of C
+                command.arg("--embed"); // Embed python interpreter into the code
                 command.arg("-o");
                 command.arg("code.cpp");
 
-                command.spawn()?.wait_with_output()?;
+                let output = command.spawn()?.wait_with_output()?;
+                if !output.status.success() {
+                    return Err(CompilationError::CompilationFailed(
+                        String::from_utf8_lossy(&output.stderr).to_string(),
+                    ));
+                }
 
                 // Compile the generated C++ code.
                 let mut code_stream = File::open(temp_dir.path().join("code.cpp"))?;
@@ -112,20 +153,23 @@ impl Compiler<NativeRuntime> for PythonCompiler {
         }
 
         // If cython is not enabled, just return the path to the python file.
-        Ok(super::CompiledCode { 
+        Ok(super::CompiledCode {
             executable: Some(temp_dir.path().join("code.py")),
             temp_dir_handle: Arc::new(Mutex::new(Some(temp_dir))),
             additional_data: NativeAdditionalData {
-                program: Some("python3".to_string())
+                program: Some(config.python_version.clone()),
             },
-            runtime_marker: std::marker::PhantomData
+            runtime_marker: std::marker::PhantomData,
         })
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::{compilers::Compiler, runtimes::{native_runtime::NativeRuntime, CodeRuntime}};
+    use crate::{
+        compilers::Compiler,
+        runtimes::{native_runtime::NativeRuntime, CodeRuntime},
+    };
 
     #[test]
     fn test_python_compile_native_python3() {
@@ -133,10 +177,9 @@ mod tests {
 print("Hello, world!", end="")
 "#;
 
-        let compiled = super::PythonCompiler.compile(
-            &mut code.as_bytes(),
-            Default::default()
-        ).unwrap();
+        let compiled = super::PythonCompiler
+            .compile(&mut code.as_bytes(), Default::default())
+            .unwrap();
 
         let result = NativeRuntime.run(&compiled, Default::default()).unwrap();
         assert_eq!(result.stdout, Some("Hello, world!".to_string()));
@@ -151,10 +194,9 @@ print("Hello, world!", end="")
 print("Hello, world!", end="")
 "#;
 
-        let compiled = super::PythonCompiler.compile(
-            &mut code.as_bytes(),
-            PythonCompilerConfig::cython_default()
-        ).unwrap();
+        let compiled = super::PythonCompiler
+            .compile(&mut code.as_bytes(), PythonCompilerConfig::cython_default())
+            .unwrap();
 
         let result = NativeRuntime.run(&compiled, Default::default()).unwrap();
         assert_eq!(result.stdout, Some("Hello, world!".to_string()));
