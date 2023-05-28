@@ -38,7 +38,7 @@ impl CodeRuntime for JailedRuntime {
         code: &crate::compilers::CompiledCode<Self>,
         config: Self::Config,
     ) -> Result<super::ExecutionResult, Self::Error> {
-        todo!()
+        todo!("JailedRuntime is not implemented yet")
     }
 }
 

@@ -45,6 +45,9 @@ impl RustCompiler {
 
         // Compile the code using `rustc` command with given arguments.
         let mut command = std::process::Command::new("rustc");
+        command.stderr(std::process::Stdio::null());
+        command.stdout(std::process::Stdio::null());
+        command.stdin(std::process::Stdio::null());
         command.current_dir(temp_dir.path());
         command.args(args);
         command.arg(code_file.path());

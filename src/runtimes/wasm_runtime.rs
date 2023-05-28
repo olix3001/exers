@@ -1,7 +1,9 @@
 use std::{
     fs::File,
-    io::{Read, Write},
+    io::{Read, Write}, sync::Arc, fmt::Debug,
 };
+
+use wasmer::{wasmparser::Operator, EngineBuilder};
 
 use crate::{common::runtime::InputData, compilers::CompiledCode};
 
@@ -13,21 +15,37 @@ use super::{CodeRuntime, ExecutionResult};
 pub struct WasmRuntime;
 
 /// Configuration for wasm runtime.
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct WasmConfig {
-    /// Maximum run time in seconds. <br/>
+    /// Amount of gas to be used by the code. <br/>
     /// Default: 0 (no limit) <br/>
-    /// **Note:** This is not implemented yet.
-    pub max_run_time: usize,
+    /// This is better than setting a time limit because it doesn't depend on the machine.
+    pub gas: usize,
+
+    /// Custom metering cost function.
+    /// This is used to calculate the cost of each instruction.
+    /// Default cost function: `|_| -> u64 { 1 }`
+    pub cost_function: Option<Arc<dyn Fn(&Operator) -> u64 + Send + Sync>>,
 
     /// File containing stdin to be used by the code.
     pub stdin: InputData,
 }
 
+impl Debug for WasmConfig {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("WasmConfig")
+            .field("gas", &self.gas)
+            .field("cost_function", &self.cost_function.is_some())
+            .field("stdin", &self.stdin)
+            .finish()
+    }
+}
+
 impl Default for WasmConfig {
     fn default() -> Self {
         Self {
-            max_run_time: 0,
+            gas: 0,
+            cost_function: None,
             stdin: InputData::Ignore,
         }
     }
@@ -48,8 +66,28 @@ impl CodeRuntime for WasmRuntime {
         code: &CompiledCode<Self>,
         config: Self::Config,
     ) -> Result<ExecutionResult, Self::Error> {
+        // Create engine with metering.
+        let compiler_config = if config.gas != 0 {
+            // Get cost function.
+            let cost_function = config.cost_function.unwrap_or_else(|| {
+                Arc::new(|_| -> u64 { 1 })
+            });
+            // Wrap cost function.
+            let cost_function = move |op: &Operator| -> u64 {
+                cost_function(op)
+            };
+            // Create metering middleware.
+            let metering = Arc::new(wasmer_middlewares::Metering::new(config.gas as u64, cost_function));
+
+            let mut compiler_config = wasmer::Cranelift::default();
+            wasmer::CompilerConfig::push_middleware(&mut compiler_config, metering);
+            compiler_config
+        } else {
+            wasmer::Cranelift::default()
+        };
+
         // Create store.
-        let mut store = wasmer::Store::default();
+        let mut store = wasmer::Store::new(EngineBuilder::new(compiler_config));
         let module = wasmer::Module::from_file(&store, &code.executable.as_ref().unwrap())?;
 
         // Crate wasi pipes.
@@ -191,5 +229,73 @@ mod tests {
 
         assert_eq!(result.stdout, Some("Hello, world!\n".to_owned()));
         assert!(result.time_taken.as_nanos() > 0);
+    }
+
+    #[test]
+    fn wasm_test_security() {
+        // Try to create file (should panic)
+        let code = r#"
+            fn main() {
+                std::fs::File::create("test.txt").unwrap();
+            }
+        "#;
+            
+        let compiled_code = RustCompiler
+            .compile(&mut code.as_bytes(), Default::default())
+            .unwrap();
+        let result = WasmRuntime.run(&compiled_code, Default::default());
+
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn wasm_test_gas_cost_ok() {
+        let code = r#"
+            fn main() {
+                println!("Hello, world!");
+            }
+        "#;
+
+        let compiled_code = RustCompiler
+            .compile(&mut code.as_bytes(), Default::default())
+            .unwrap();
+        let result = WasmRuntime
+            .run(
+                &compiled_code,
+                WasmConfig {
+                    stdin: InputData::String("world".to_owned()),
+                    gas: 5000,
+                    ..Default::default()
+                },
+            )
+            .unwrap();
+
+        assert_eq!(result.stdout, Some("Hello, world!\n".to_owned()));
+    }
+
+    #[test]
+    #[should_panic]
+    fn wasm_test_gas_cost_exceeded() {
+        let code = r#"
+            fn main() {
+                for _ in 0..1000000 {
+                    println!("Hello, world!")
+                }
+            }
+        "#;
+
+        let compiled_code = RustCompiler
+            .compile(&mut code.as_bytes(), Default::default())
+            .unwrap();
+
+        let _result = WasmRuntime
+            .run(
+                &compiled_code,
+                WasmConfig {
+                    gas: 100,
+                    ..Default::default()
+                },
+            )
+            .unwrap();
     }
 }
