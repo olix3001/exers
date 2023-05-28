@@ -39,6 +39,40 @@ pub struct WasmConfig {
 
     /// File containing stdin to be used by the code.
     pub stdin: InputData,
+
+    /// Compiler that should be used to compile the code.
+    /// Default: `WasmCompiler::Cranelift`
+    pub compiler: WasmCompiler,
+}
+
+/// Sets the compiler that should be used to compile the code.
+#[derive(Debug, Clone)]
+pub enum WasmCompiler {
+    /// Cranelift compiler. <br/>
+    /// This is the default compiler. It compiles the code faster than LLVM, but the code runs slower.
+    Cranelift,
+    /// LLVM compiler. <br/>
+    /// Has longer compile times than Cranelift, but produced bytecode is faster and more optimized. <br/>
+    /// Requires `llvm` to be installed on the system.
+    #[cfg(feature = "wasm-llvm")]
+    LLVM,
+}
+
+impl WasmCompiler {
+    /// Returns the compiler that should be used to compile the code.
+    pub fn get_compiler(&self) -> impl wasmer::CompilerConfig {
+        match self {
+            Self::Cranelift => wasmer::Cranelift::default(),
+            #[cfg(feature = "wasm-llvm")]
+            Self::LLVM => wasmer_compiler_llvm::LLVM::default(),
+        }
+    }
+}
+
+impl Default for WasmCompiler {
+    fn default() -> Self {
+        Self::Cranelift
+    }
 }
 
 impl Debug for WasmConfig {
@@ -58,8 +92,17 @@ impl Default for WasmConfig {
             memory_limit: 0,
             cost_function: None,
             stdin: InputData::Ignore,
+            compiler: WasmCompiler::default(),
         }
     }
+}
+
+/// Additional data for wasm runtime.
+/// This can be used by the compiler to pass additional data to the runtime.
+#[derive(Debug, Clone, Default)]
+pub struct WasmAdditionalData {
+    /// Additional arguments to be passed to the code.
+    pub args: Vec<String>,
 }
 
 /// Runtime for wasm code.
@@ -67,7 +110,7 @@ impl CodeRuntime for WasmRuntime {
     /// Configuration for the runtime.
     type Config = WasmConfig;
     /// Additional compilation data.
-    type AdditionalData = ();
+    type AdditionalData = WasmAdditionalData;
     /// Error type for the runtime.
     type Error = Box<dyn std::error::Error + Send + Sync>;
 
@@ -91,15 +134,15 @@ impl CodeRuntime for WasmRuntime {
                 cost_function,
             ));
 
-            let mut compiler_config = wasmer::Cranelift::default();
+            let mut compiler_config = config.compiler.get_compiler();
             wasmer::CompilerConfig::push_middleware(&mut compiler_config, metering);
             compiler_config
         } else {
-            wasmer::Cranelift::default()
+            config.compiler.get_compiler()
         };
 
         // Create engine
-        let mut engine: Engine = compiler_config.into();
+        let mut engine: Engine = wasmer::EngineBuilder::new(compiler_config).into();
 
         // Set memory limit.
         if config.memory_limit != 0 {
@@ -138,6 +181,7 @@ impl CodeRuntime for WasmRuntime {
             .stdin(Box::new(stdin_rx))
             .stdout(Box::new(stdout_tx))
             .stderr(Box::new(stderr_tx))
+            .args(&code.additional_data.args)
             .finalize(&mut store)?;
 
         // Initialize wasi instance.
@@ -149,6 +193,7 @@ impl CodeRuntime for WasmRuntime {
 
         // Get _start function.
         let start = instance.exports.get_function("_start")?;
+        
 
         // Start time measurement.
         let start_time = std::time::Instant::now();

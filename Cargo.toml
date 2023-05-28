@@ -21,10 +21,14 @@ jailed = ["native"]
 rust = []
 cpp = []
 
+# Additional features
+wasm-llvm = ["wasmer-compiler-llvm"]
+
 [dependencies]
 derivative = "2.2.0"
 tempfile = "3.5.0"
 wasmer = { version = "3.3.0", optional = true }
 wasmer-middlewares = { version = "3.3.0", optional = true }
 wasmer-wasix = { version = "0.4.0", optional = true }
+wasmer-compiler-llvm = { version = "3.3.0", optional = true }
 which = "4.4.0"
