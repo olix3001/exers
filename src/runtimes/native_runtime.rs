@@ -57,7 +57,11 @@ impl CodeRuntime for NativeRuntime {
     ) -> Result<super::ExecutionResult, Self::Error> {
         // Create new process.
         let mut process = match &code.additional_data.program {
-            Some(program) => std::process::Command::new(program),
+            Some(program) => {
+                let mut cmd = std::process::Command::new(program);
+                cmd.arg(&code.executable.as_ref().unwrap());
+                cmd
+            },
             None => std::process::Command::new(&code.executable.as_ref().unwrap()),
         };
 

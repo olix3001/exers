@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 
+#[cfg(feature = "wasm")]
 use wasmer::{MemoryError, MemoryType, Pages, Tunables};
 
 /// Represents input data for the code.
@@ -15,6 +16,7 @@ pub enum InputData {
 
 /// Limiting tunables for wasm runtime.
 /// This allows to limit the resources used by the code.
+#[cfg(feature = "wasm")]
 pub struct LimitingTunables<T: Tunables> {
     /// Maximum amount of memory that can be used by the code.
     /// It is provided in pages, where each page is 64KiB.
@@ -23,6 +25,7 @@ pub struct LimitingTunables<T: Tunables> {
     base: T,
 }
 
+#[cfg(feature = "wasm")]
 impl<T: Tunables> LimitingTunables<T> {
     /// Creates new limiting tunables.
     pub fn new(limit: Pages, base: T) -> Self {
@@ -61,6 +64,7 @@ impl<T: Tunables> LimitingTunables<T> {
     }
 }
 
+#[cfg(feature = "wasm")]
 impl<T: Tunables> Tunables for LimitingTunables<T> {
     fn memory_style(&self, memory: &MemoryType) -> wasmer::vm::MemoryStyle {
         let adjusted = self.adjust_memory(memory);
