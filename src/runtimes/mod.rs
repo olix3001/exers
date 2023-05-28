@@ -1,3 +1,9 @@
+//! Runtimes for running code.
+//! 
+//! Currently available runtimes are:
+//! - [Native](native_runtime)
+//! - [WASM](wasm_runtime)
+
 use crate::compilers::CompiledCode;
 use std::fmt::Debug;
 

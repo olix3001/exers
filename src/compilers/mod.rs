@@ -1,3 +1,12 @@
+//! Module containing all compilers.
+//! Currently supported compilers are:
+//! 
+//! | Compiler | Supported Runtimes |
+//! | --- | --- |
+//! | [Rust](rust_compiler) | [WASM](crate::runtimes::wasm_runtime), [Native](crate::runtimes::native_runtime) |
+//! | [C++](cpp_compiler) | [WASM](crate::runtimes::wasm_runtime), [Native](crate::runtimes::native_runtime) |
+//! | [Python](python_compiler) | [Native](crate::runtimes::native_runtime) |
+
 use std::{
     fmt::Debug,
     io,
