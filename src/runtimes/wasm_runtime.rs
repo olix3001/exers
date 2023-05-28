@@ -1,16 +1,21 @@
 use std::{
+    fmt::Debug,
     fs::File,
-    io::{Read, Write}, sync::Arc, fmt::Debug,
+    io::{Read, Write},
+    sync::Arc,
 };
 
-use wasmer::{wasmparser::Operator, EngineBuilder};
+use wasmer::{wasmparser::Operator, BaseTunables, Engine, Pages};
 
-use crate::{common::runtime::InputData, compilers::CompiledCode};
+use crate::{
+    common::runtime::{InputData, LimitingTunables},
+    compilers::CompiledCode,
+};
 
 use super::{CodeRuntime, ExecutionResult};
 
 /// Runtime for wasm code.
-/// This uses `wasmtime` to run the code.
+/// This uses `wasmer` to run the code.
 #[derive(Debug, Clone, Default)]
 pub struct WasmRuntime;
 
@@ -21,6 +26,11 @@ pub struct WasmConfig {
     /// Default: 0 (no limit) <br/>
     /// This is better than setting a time limit because it doesn't depend on the machine.
     pub gas: usize,
+
+    /// Maximum amount of memory that can be used by the code. <br/>
+    /// Default: 0 (no limit)
+    /// Unit for this is pages, where each page is 64KiB.
+    pub memory_limit: usize,
 
     /// Custom metering cost function.
     /// This is used to calculate the cost of each instruction.
@@ -45,6 +55,7 @@ impl Default for WasmConfig {
     fn default() -> Self {
         Self {
             gas: 0,
+            memory_limit: 0,
             cost_function: None,
             stdin: InputData::Ignore,
         }
@@ -69,15 +80,16 @@ impl CodeRuntime for WasmRuntime {
         // Create engine with metering.
         let compiler_config = if config.gas != 0 {
             // Get cost function.
-            let cost_function = config.cost_function.unwrap_or_else(|| {
-                Arc::new(|_| -> u64 { 1 })
-            });
+            let cost_function = config
+                .cost_function
+                .unwrap_or_else(|| Arc::new(|_| -> u64 { 1 }));
             // Wrap cost function.
-            let cost_function = move |op: &Operator| -> u64 {
-                cost_function(op)
-            };
+            let cost_function = move |op: &Operator| -> u64 { cost_function(op) };
             // Create metering middleware.
-            let metering = Arc::new(wasmer_middlewares::Metering::new(config.gas as u64, cost_function));
+            let metering = Arc::new(wasmer_middlewares::Metering::new(
+                config.gas as u64,
+                cost_function,
+            ));
 
             let mut compiler_config = wasmer::Cranelift::default();
             wasmer::CompilerConfig::push_middleware(&mut compiler_config, metering);
@@ -86,8 +98,19 @@ impl CodeRuntime for WasmRuntime {
             wasmer::Cranelift::default()
         };
 
+        // Create engine
+        let mut engine: Engine = compiler_config.into();
+
+        // Set memory limit.
+        if config.memory_limit != 0 {
+            let base = BaseTunables::for_target(&wasmer::Target::default());
+            let memory_limit_tunables =
+                LimitingTunables::new(Pages(config.memory_limit as u32), base);
+            engine.set_tunables(memory_limit_tunables);
+        }
+
         // Create store.
-        let mut store = wasmer::Store::new(EngineBuilder::new(compiler_config));
+        let mut store = wasmer::Store::new(engine);
         let module = wasmer::Module::from_file(&store, &code.executable.as_ref().unwrap())?;
 
         // Crate wasi pipes.
@@ -239,7 +262,7 @@ mod tests {
                 std::fs::File::create("test.txt").unwrap();
             }
         "#;
-            
+
         let compiled_code = RustCompiler
             .compile(&mut code.as_bytes(), Default::default())
             .unwrap();
@@ -293,6 +316,33 @@ mod tests {
                 &compiled_code,
                 WasmConfig {
                     gas: 100,
+                    ..Default::default()
+                },
+            )
+            .unwrap();
+    }
+
+    #[test]
+    #[should_panic]
+    fn wasm_test_memory_limit_exceeded() {
+        let code = r#"
+            fn main() {
+                let mut v = Vec::new();
+                for _ in 0..10000000 {
+                    v.push(0);
+                }
+            }
+        "#;
+
+        let compiled_code = RustCompiler
+            .compile(&mut code.as_bytes(), Default::default())
+            .unwrap();
+
+        let _result = WasmRuntime
+            .run(
+                &compiled_code,
+                WasmConfig {
+                    memory_limit: 100,
                     ..Default::default()
                 },
             )
