@@ -13,6 +13,8 @@ use crate::runtimes::CodeRuntime;
 pub mod cpp_compiler;
 #[cfg(feature = "rust")]
 pub mod rust_compiler;
+#[cfg(feature = "python")]
+pub mod python_compiler;
 
 /// Trait for every compiler that can be used to compile some code.
 pub trait Compiler<R: CodeRuntime>: Send + Sync + Sized {

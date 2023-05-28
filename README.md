@@ -21,15 +21,15 @@ fn main() {
 
 ## Supported languages :books:
 
-| Language | Supported Runtimes | Required Dependencies |
-| -------- | ------------------ | --------------------- |
-| Rust     | Wasm, Native       | Rustc                 |
-| C++      | Wasm, Native       | clang++               |
-| Python   | None               | ---                   |
-| Java     | None               | ---                   |
-| C#       | None               | ---                   |
-| Go       | None               | ---                   |
-| Ruby     | None               | ---                   |
+| Language | Supported Runtimes | Required Dependencies      |
+| -------- | ------------------ | -------------------------- |
+| Rust     | Wasm, Native       | Rustc                      |
+| C++      | Wasm, Native       | clang++                    |
+| Python   | Native             | python3, Cython (optional) |
+| Java     | None               | ---                        |
+| C#       | None               | ---                        |
+| Go       | None               | ---                        |
+| Ruby     | None               | ---                        |
 
 ## Available runtimes :running_man:
 
@@ -58,3 +58,15 @@ For C++ you need to install `wasi-sdk` or other WASI sdk/libc and specify
 ### Native
 
 Native runtime just requires dependencies for the language you want to use.
+
+## Additional features :sparkles:
+
+### wasm-llvm
+
+This feature allows you to use the LLVM backend for the WASM runtime.
+LLVM offers better performance, but has longer compilation times.
+
+### cython
+
+This feature allows you to use Cython for the Python runtime.
+This makes code execution faster, but requires Cython to be installed.

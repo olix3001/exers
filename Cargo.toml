@@ -10,7 +10,7 @@ readme = "README.md"
 keywords = ["sandbox", "wasm", "rust", "compile"]
 
 [features]
-default = ["wasm", "native", "rust", "cpp", "jailed"]
+default = ["wasm", "native", "rust", "cpp", "python", "jailed"]
 
 # Runtimes
 wasm = ["wasmer", "wasmer-wasix", "wasmer-middlewares"]
@@ -20,9 +20,11 @@ jailed = ["native"]
 # Languages
 rust = []
 cpp = []
+python = []
 
 # Additional features
 wasm-llvm = ["wasmer-compiler-llvm"]
+cython = ["cpp"]
 
 [dependencies]
 derivative = "2.2.0"
