@@ -1,6 +1,6 @@
 //! Module containing all compilers.
 //! Currently supported compilers are:
-//! 
+//!
 //! | Compiler | Supported Runtimes |
 //! | --- | --- |
 //! | [Rust](rust_compiler) | [WASM](crate::runtimes::wasm_runtime), [Native](crate::runtimes::native_runtime) |

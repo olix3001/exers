@@ -138,18 +138,17 @@ impl Compiler<WasmRuntime> for CppCompiler {
         code: &mut impl io::Read,
         config: Self::Config,
     ) -> CompilationResult<CompiledCode<WasmRuntime>> {
-        check_program_installed("clang++")?;
-        let sysroot_path = std::env::var("WASI_SYSROOT").expect(
-            "WASI_SYSROOT environment variable not set. Consider installing wasi-sdk or wasi-libc.",
+        let sdk_path = std::env::var("WASI_SDK").expect(
+            "WASI_SDK environment variable not set. Consider installing wasi-sdk or wasi-libc.",
         );
 
         self.compile_with_args(
             code,
-            "clang++",
+            format!("{}/bin/clang++", sdk_path).as_str(),
             config,
             &[
                 "--target=wasm32-wasi",
-                format!("--sysroot={}", sysroot_path).as_str(),
+                format!("--sysroot={}/share/wasi-sysroot", sdk_path).as_str(),
             ],
             "executable.wasm",
         )

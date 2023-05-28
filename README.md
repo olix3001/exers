@@ -53,7 +53,7 @@ Commits should follow the [Conventional Commits](https://www.conventionalcommits
 If you want to use the WASM runtime, you need to install the `wasm32-wasi` target for rustc. You can do this by running `rustup target add wasm32-wasi`.
 
 For C++ you need to install `wasi-sdk` or other WASI sdk/libc and specify
-`WASI_SYSROOT` environment variable to point to the sdk sysroot.
+`WASI_SDK` environment variable to point to the sdk.
 
 ### Native
 
