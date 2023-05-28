@@ -122,7 +122,7 @@ impl Compiler<NativeRuntime> for PythonCompiler {
         #[cfg(feature = "cython")]
         {
             if config.use_cython {
-                check_program_installed("cython");
+                check_program_installed("cython")?;
                 let mut command = std::process::Command::new("cython");
                 command.stderr(std::process::Stdio::piped());
                 command.stdout(std::process::Stdio::null());

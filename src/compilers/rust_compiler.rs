@@ -31,7 +31,7 @@ impl RustCompiler {
     where
         Self: Compiler<R>,
     {
-        check_program_installed("rustc");
+        check_program_installed("rustc")?;
 
         // Create temporary directory for code and executable.
         let temp_dir = tempfile::Builder::new().prefix("exers-").tempdir()?;

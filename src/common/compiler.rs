@@ -36,12 +36,11 @@ impl OptLevel {
 }
 
 /// Checks if program is installed and panic with nice message if it is not.
-pub fn check_program_installed(program: &str) {
+pub fn check_program_installed(program: &str) -> Result<(), CompilationError> {
     if !which::which(program).is_ok() {
-        panic!(
-            "{} is not installed. Please install it and try again.",
-            program
-        );
+        Err(CompilationError::ProgramNotInstalled(program.to_string()))
+    } else {
+        Ok(())
     }
 }
 
@@ -56,6 +55,10 @@ pub enum CompilationError {
     /// This is returned when compiler returns non-zero exit code.
     /// This contains stderr of compiler.
     CompilationFailed(String),
+
+    /// Program is not installed.
+    /// This is returned when compiler dependency is not installed.
+    ProgramNotInstalled(String),
 }
 
 impl From<std::io::Error> for CompilationError {
@@ -72,6 +75,7 @@ impl Display for CompilationError {
         match self {
             CompilationError::IoError(e) => write!(f, "IO error: {}", e),
             CompilationError::CompilationFailed(e) => write!(f, "Compilation failed: {}", e),
+            CompilationError::ProgramNotInstalled(e) => write!(f, "Program not installed: {}", e),
         }
     }
 }
