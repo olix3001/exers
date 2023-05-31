@@ -5,7 +5,7 @@ use std::{
     sync::Arc, path::PathBuf,
 };
 
-use wasmer::{wasmparser::Operator, BaseTunables, Engine, Pages};
+use wasmer::{wasmparser::Operator, BaseTunables, Engine, Pages, NativeEngineExt};
 use wasmer_wasix::virtual_fs::TmpFileSystem;
 
 use crate::{

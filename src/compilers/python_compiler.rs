@@ -185,6 +185,7 @@ impl Compiler<WasmRuntime> for PythonCompiler {
         code: &mut impl std::io::Read,
         config: Self::Config,
     ) -> CompilationResult<super::CompiledCode<WasmRuntime>> {
+        panic!("Python compiler is not yet supported for wasm runtime. For more information, see https://github.com/wasmerio/wasmer/issues/3170");
         // If cython is enabled, return an error.
         #[cfg(feature = "cython")]
         if config.use_cython {
@@ -261,18 +262,18 @@ print("Hello, world!", end="")
         assert_eq!(result.stdout, Some("Hello, world!".to_string()));
     }
 
-    #[cfg(feature = "wasm")]
-    #[test]
-    fn test_python_compile_wasm() {
-        let code = r#"
-print("Hello, world!", end="")
-"#;
+//     #[cfg(feature = "wasm")]
+//     #[test]
+//     fn test_python_compile_wasm() {
+//         let code = r#"
+// print("Hello, world!", end="")
+// "#;
 
-        let compiled = super::PythonCompiler
-            .compile(&mut code.as_bytes(), Default::default())
-            .unwrap();
+//         let compiled = super::PythonCompiler
+//             .compile(&mut code.as_bytes(), Default::default())
+//             .unwrap();
 
-        let result = super::WasmRuntime.run(&compiled, Default::default()).unwrap();
-        assert_eq!(result.stdout, Some("Hello, world!".to_string()));
-    }
+//         let result = super::WasmRuntime.run(&compiled, Default::default()).unwrap();
+//         assert_eq!(result.stdout, Some("Hello, world!".to_string()));
+//     }
 }
