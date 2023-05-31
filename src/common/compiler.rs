@@ -59,6 +59,10 @@ pub enum CompilationError {
     /// Program is not installed.
     /// This is returned when compiler dependency is not installed.
     ProgramNotInstalled(String),
+
+    /// Feature is not supported.
+    /// This is returned when feature is not supported.
+    FeatureNotSupported(String),
 }
 
 impl From<std::io::Error> for CompilationError {
@@ -76,6 +80,7 @@ impl Display for CompilationError {
             CompilationError::IoError(e) => write!(f, "IO error: {}", e),
             CompilationError::CompilationFailed(e) => write!(f, "Compilation failed: {}", e),
             CompilationError::ProgramNotInstalled(e) => write!(f, "Program not installed: {}", e),
+            CompilationError::FeatureNotSupported(e) => write!(f, "Feature not supported: {}", e),
         }
     }
 }

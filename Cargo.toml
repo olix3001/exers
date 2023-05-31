@@ -12,6 +12,10 @@ keywords = ["sandbox", "wasm", "rust", "compile"]
 [features]
 default = ["wasm", "native", "cpp", "python", "jailed"]
 
+# Shortcuts
+all-languages = ["cpp", "python"]
+all-runtimes = ["wasm", "native", "jailed"]
+
 # Runtimes
 wasm = ["wasmer", "wasmer-wasix", "wasmer-middlewares"]
 native = []

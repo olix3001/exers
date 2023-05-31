@@ -2,10 +2,11 @@ use std::{
     fmt::Debug,
     fs::File,
     io::{Read, Write},
-    sync::Arc,
+    sync::Arc, path::PathBuf,
 };
 
 use wasmer::{wasmparser::Operator, BaseTunables, Engine, Pages};
+use wasmer_wasix::virtual_fs::TmpFileSystem;
 
 use crate::{
     common::runtime::{InputData, LimitingTunables},
@@ -103,6 +104,10 @@ impl Default for WasmConfig {
 pub struct WasmAdditionalData {
     /// Additional arguments to be passed to the code.
     pub args: Vec<String>,
+
+    /// Files that should be mounted in the code.
+    /// This will be mounted as `/sandbox` in the code.
+    pub preopen_dir: Option<PathBuf>,
 }
 
 /// Wasm runtime error.
@@ -137,7 +142,9 @@ impl_wasm_error!(
     WasiError => wasmer_wasix::WasiError,
     InstantiationError => wasmer::InstantiationError,
     ExportError => wasmer::ExportError,
-    RuntimeError => wasmer::RuntimeError
+    RuntimeError => wasmer::RuntimeError,
+    WasiStateCreationError => wasmer_wasix::WasiStateCreationError,
+    FsError => wasmer_wasix::FsError
 );
 
 /// Runtime for wasm code.
@@ -216,8 +223,22 @@ impl CodeRuntime for WasmRuntime {
             .stdin(Box::new(stdin_rx))
             .stdout(Box::new(stdout_tx))
             .stderr(Box::new(stderr_tx))
-            .args(&code.additional_data.args)
-            .finalize(&mut store)?;
+            .args(&code.additional_data.args);
+
+        // Add preopen dir if present.
+        if let Some(dir) = &code.additional_data.preopen_dir {
+            // Get host fs.
+            let host_fs: Arc<dyn wasmer_wasix::virtual_fs::FileSystem + Send + Sync + 'static> = Arc::new(
+                wasmer_wasix::virtual_fs::host_fs::FileSystem::default()
+            );
+
+            // Create tmp fs and mount host fs.
+            let tmp_fs = TmpFileSystem::new();
+            tmp_fs.mount("/sandbox".into(), &host_fs, dir.clone())?;
+            wasi_env = wasi_env.sandbox_fs(tmp_fs);
+        }
+
+        let mut wasi_env = wasi_env.finalize(&mut store)?;
 
         // Initialize wasi instance.
         let import_object = wasi_env.import_object(&mut store, &module)?;

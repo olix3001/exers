@@ -4,10 +4,16 @@ use std::{
     sync::{Arc, Mutex},
 };
 
+#[allow(unused_imports)]
 use crate::{
-    common::compiler::CompilationResult,
+    common::compiler::{CompilationResult, CompilationError},
     runtimes::native_runtime::{NativeAdditionalData, NativeRuntime},
 };
+
+/// Include python wasm file if wasm feature is enabled. <br/>
+/// This is from https://github.com/vmware-labs/webassembly-language-runtimes/releases <br/>
+#[cfg(feature = "wasm")]
+const PYTHON_WASM: &[u8] = include_bytes!("../../assets/python.wasm");
 
 #[cfg(feature = "cython")]
 use crate::common::compiler::{check_program_installed, CompilationError};
@@ -164,6 +170,59 @@ impl Compiler<NativeRuntime> for PythonCompiler {
     }
 }
 
+/// Python compiler for wasm runtime.
+#[cfg(feature = "wasm")]
+use crate::runtimes::wasm_runtime::{WasmRuntime, WasmAdditionalData};
+
+#[cfg(feature = "wasm")]
+impl Compiler<WasmRuntime> for PythonCompiler {
+    /// Configuration for python compiler.
+    type Config = PythonCompilerConfig;
+
+    #[allow(unused_variables)]
+    fn compile(
+        &self,
+        code: &mut impl std::io::Read,
+        config: Self::Config,
+    ) -> CompilationResult<super::CompiledCode<WasmRuntime>> {
+        // If cython is enabled, return an error.
+        #[cfg(feature = "cython")]
+        if config.use_cython {
+            return Err(CompilationError::FeatureNotSupported(
+                "Cython is not supported for wasm runtime.".to_string(),
+            ));
+        }
+
+        // Create temporary directory.
+        let temp_dir = tempfile::Builder::new().prefix("exers-").tempdir()?;
+
+        // Copy python.wasm to the temporary directory.
+        let mut wasm_file = File::create(temp_dir.path().join("python.wasm"))?;
+        std::io::copy(&mut PYTHON_WASM.clone(), &mut wasm_file)?;
+
+        // Create sandbox directory.
+        std::fs::create_dir(temp_dir.path().join("sandbox"))?;
+
+        // Create file with python code
+        let mut code_file = File::create(temp_dir.path().join("sandbox").join("code.py"))?;
+        std::io::copy(code, &mut code_file)?;
+
+        // Return the compiled code.
+        let sandbox_path = temp_dir.path().join("sandbox");
+        Ok(super::CompiledCode {
+            executable: Some(temp_dir.path().join("python.wasm")),
+            temp_dir_handle: Arc::new(Mutex::new(Some(temp_dir))),
+            additional_data: WasmAdditionalData {
+                args: vec!["/sandbox/code.py".into()],
+                preopen_dir: Some(sandbox_path),
+            },
+            runtime_marker: std::marker::PhantomData,
+        })
+    }
+}
+
+
+
 #[cfg(test)]
 mod tests {
     use crate::{
@@ -199,6 +258,21 @@ print("Hello, world!", end="")
             .unwrap();
 
         let result = NativeRuntime.run(&compiled, Default::default()).unwrap();
+        assert_eq!(result.stdout, Some("Hello, world!".to_string()));
+    }
+
+    #[cfg(feature = "wasm")]
+    #[test]
+    fn test_python_compile_wasm() {
+        let code = r#"
+print("Hello, world!", end="")
+"#;
+
+        let compiled = super::PythonCompiler
+            .compile(&mut code.as_bytes(), Default::default())
+            .unwrap();
+
+        let result = super::WasmRuntime.run(&compiled, Default::default()).unwrap();
         assert_eq!(result.stdout, Some("Hello, world!".to_string()));
     }
 }
