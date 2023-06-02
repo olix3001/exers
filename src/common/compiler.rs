@@ -1,5 +1,7 @@
 use std::{error::Error, fmt::Display};
 
+use super::preprocessor::PreprocessorError;
+
 /// Enum for opt level
 /// Some compilers may not support all opt levels
 #[derive(Debug, Clone)]
@@ -63,6 +65,10 @@ pub enum CompilationError {
     /// Feature is not supported.
     /// This is returned when feature is not supported.
     FeatureNotSupported(String),
+
+    /// Preprocessor error.
+    /// This is returned when preprocessor fails.
+    PreprocessorError(PreprocessorError),
 }
 
 impl From<std::io::Error> for CompilationError {
@@ -81,7 +87,14 @@ impl Display for CompilationError {
             CompilationError::CompilationFailed(e) => write!(f, "Compilation failed: {}", e),
             CompilationError::ProgramNotInstalled(e) => write!(f, "Program not installed: {}", e),
             CompilationError::FeatureNotSupported(e) => write!(f, "Feature not supported: {}", e),
+            CompilationError::PreprocessorError(e) => write!(f, "Preprocessor error: {:?}", e),
         }
     }
 }
 impl Error for CompilationError {}
+
+impl From<PreprocessorError> for CompilationError {
+    fn from(e: PreprocessorError) -> Self {
+        Self::PreprocessorError(e)
+    }
+}

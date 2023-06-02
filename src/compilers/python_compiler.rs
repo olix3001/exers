@@ -179,7 +179,7 @@ impl Compiler<WasmRuntime> for PythonCompiler {
     /// Configuration for python compiler.
     type Config = PythonCompilerConfig;
 
-    #[allow(unused_variables)]
+    #[allow(unused_variables, unreachable_code)]
     fn compile(
         &self,
         code: &mut impl std::io::Read,
