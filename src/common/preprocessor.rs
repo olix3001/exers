@@ -14,7 +14,7 @@ pub enum PreprocessorError {
 pub type PreprocessorResult<T> = Result<T, PreprocessorError>;
 
 /// Preprocessor trait. Preprocessors are used to change the code before compilation.
-pub trait Preprocessor: Send + Sync + Debug {
+pub trait Preprocessor: Send + Sync {
     /// Preprocesses code. It can change the code, or return an error.
     fn preprocess(&self, code: &str) -> PreprocessorResult<String>;
 }

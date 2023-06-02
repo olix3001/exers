@@ -29,7 +29,6 @@ use super::{
 ///     // Run code using preconfigured runtime.
 ///     println!("{:?}", scratch_runtime(&mut "code"));
 /// }
-#[derive(Debug)]
 pub struct RuntimeBuilder<C: Compiler<R>, R: CodeRuntime> {
     /// Preprocessors that will be used to preprocess code.
     preprocessors: Vec<Box<dyn Preprocessor>>,
