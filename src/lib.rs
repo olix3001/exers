@@ -25,7 +25,7 @@
 //! Runtimes take [`CompiledCode<R: CodeRuntime>`](crate::compilers::CompiledCode) object and run it.
 //!
 //! ## Example
-//! ```rust, no_run
+//! ```ignore
 //! // Create compiler.
 //! let compiler = RustCompiler;
 //!

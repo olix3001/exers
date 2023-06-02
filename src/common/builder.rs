@@ -1,6 +1,6 @@
 //! Implements builder pattern for exers.
 
-use std::{io::Read, ops::Deref};
+use std::{io::Read, ops::Deref, sync::Arc};
 
 use crate::{
     compilers::{CompiledCode, Compiler},
@@ -9,7 +9,7 @@ use crate::{
 
 use super::{
     compiler::{CompilationError, CompilationResult},
-    preprocessor::Preprocessor,
+    preprocessor::{Preprocessor, PreprocessorBundle},
 };
 
 /// Builder for creating more complex compilers.
@@ -31,7 +31,7 @@ use super::{
 /// }
 pub struct RuntimeBuilder<C: Compiler<R>, R: CodeRuntime> {
     /// Preprocessors that will be used to preprocess code.
-    preprocessors: Vec<Box<dyn Preprocessor>>,
+    preprocessors: Vec<Arc<dyn Preprocessor>>,
     /// Compiler that will be used to compile code.
     compiler: Option<C>,
     /// Runtime that will be used to run code.
@@ -68,7 +68,14 @@ impl<C: Compiler<R> + 'static, R: CodeRuntime + 'static> RuntimeBuilder<C, R> {
 
     /// Adds preprocessor to the builder.
     pub fn preprocessor(mut self, preprocessor: impl Preprocessor + 'static) -> Self {
-        self.preprocessors.push(Box::new(preprocessor));
+        self.preprocessors.push(Arc::new(preprocessor));
+        self
+    }
+
+    /// Adds preprocessor bundle to the builder.
+    pub fn preprocessor_bundle(mut self, bundle: &PreprocessorBundle) -> Self {
+        self.preprocessors
+            .extend(bundle.preprocessors.iter().cloned());
         self
     }
 

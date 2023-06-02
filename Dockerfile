@@ -1,6 +1,6 @@
 # This dockerfile creates a container with everything preconfigured to use this library
 
-FROM debian:latest
+FROM debian:stable-slim
 
 # Update
 RUN apt update -y && apt-get autoremove --yes
