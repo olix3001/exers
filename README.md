@@ -79,6 +79,6 @@ Examples can be found in the `examples` directory. To run them, you need to inst
 ## Dockerfile :whale:
 
 This project contains a Dockerfile that can be used to build a docker image with all the required dependencies for all the languages and runtimes. This image can be used to base your own images on :smile:.
-I'm currently working on minimizing the size of the image (currently about 3GB) and allowing you to choose which languages and runtimes you want to include.
+I'm currently working on minimizing the size of the image (currently about 2GB) and allowing you to choose which languages and runtimes you want to include.
 
 **Warning:** I've not tested the image yet, so it might not work for some languages and runtimes.

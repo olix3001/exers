@@ -10,8 +10,9 @@ RUN apt install -y  \
     curl \
     git
 
+# RUST
 # Install rust as we need it for rust compiler
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
 
 # Add rust to path
 ENV PATH="/root/.cargo/bin:${PATH}"
@@ -32,7 +33,7 @@ RUN mv wasi-sdk-20.0 /wasi-sdk && rm wasi-sdk.tar.gz
 ENV WASI_SDK=/wasi-sdk
 
 # Install wasmer as we need it for running the compiled wasm
-RUN curl https://get.wasmer.io -sSfL | sh
+# RUN curl https://get.wasmer.io -sSfL | sh
 
 # Install python3 as we need it for python compiler
 RUN apt install -y \
