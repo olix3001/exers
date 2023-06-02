@@ -1,3 +1,6 @@
+// TODO: Remove after implementing this runtime
+#![allow(clippy::derivable_impls, dead_code, unused_variables)]
+
 use crate::{
     common::compiler::CompilationResult,
     compilers::{CompiledCode, Compiler},
@@ -59,7 +62,7 @@ where
         code: &mut impl std::io::Read,
         config: Self::Config,
     ) -> CompilationResult<crate::compilers::CompiledCode<JailedRuntime>> {
-        let native_code: CompiledCode<NativeRuntime> = C::compile(&self, code, config)?;
+        let native_code: CompiledCode<NativeRuntime> = C::compile(self, code, config)?;
         Ok(CompiledCode {
             executable: native_code.executable.clone(),
             temp_dir_handle: native_code.temp_dir_handle.clone(),

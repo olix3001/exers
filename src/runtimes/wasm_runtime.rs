@@ -37,6 +37,7 @@ pub struct WasmConfig {
     /// Custom metering cost function.
     /// This is used to calculate the cost of each instruction.
     /// Default cost function: `|_| -> u64 { 1 }`
+    #[allow(clippy::type_complexity)]
     pub cost_function: Option<Arc<dyn Fn(&Operator) -> u64 + Send + Sync>>,
 
     /// File containing stdin to be used by the code.
@@ -197,7 +198,7 @@ impl CodeRuntime for WasmRuntime {
 
         // Create store.
         let mut store = wasmer::Store::new(engine);
-        let module = wasmer::Module::from_file(&store, &code.executable.as_ref().unwrap())?;
+        let module = wasmer::Module::from_file(&store, code.executable.as_ref().unwrap())?;
 
         // Crate wasi pipes.
         let (mut stdin_tx, stdin_rx) = wasmer_wasix::Pipe::channel();
@@ -208,7 +209,7 @@ impl CodeRuntime for WasmRuntime {
         match &config.stdin {
             InputData::String(input) => {
                 stdin_tx.write_all(input.as_bytes())?;
-                stdin_tx.write(b"\n")?; // Add a newline to the end of input.
+                stdin_tx.write_all(b"\n")?; // Add a newline to the end of input.
             }
             InputData::File(path) => {
                 let mut file = File::open(path)?;

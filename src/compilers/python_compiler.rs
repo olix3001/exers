@@ -163,7 +163,7 @@ impl Compiler<NativeRuntime> for PythonCompiler {
             executable: Some(temp_dir.path().join("code.py")),
             temp_dir_handle: Arc::new(Mutex::new(Some(temp_dir))),
             additional_data: NativeAdditionalData {
-                program: Some(config.python_version.clone()),
+                program: Some(config.python_version),
             },
             runtime_marker: std::marker::PhantomData,
         })

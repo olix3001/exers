@@ -129,11 +129,13 @@ impl<C: Compiler<R> + 'static, R: CodeRuntime + 'static> RuntimeBuilder<C, R> {
 
 pub struct CustomRuntime<R: CodeRuntime> {
     /// Combination of compiler and runtime.
+    #[allow(clippy::type_complexity)]
     crf: Box<dyn Fn(&mut dyn std::io::Read) -> Result<ExecutionResult, CustomRuntimeError<R>>>,
 }
 
 impl<R: CodeRuntime> CustomRuntime<R> {
     /// Creates new custom runtime. This should be used only by builder.
+    #[allow(clippy::type_complexity)]
     pub(crate) fn new(
         cf: impl Fn(&mut dyn std::io::Read) -> CompilationResult<CompiledCode<R>> + 'static,
         rf: impl Fn(&CompiledCode<R>) -> Result<ExecutionResult, R::Error> + 'static,
@@ -156,6 +158,7 @@ impl<R: CodeRuntime> CustomRuntime<R> {
     }
 }
 
+#[allow(clippy::type_complexity)]
 impl<R: CodeRuntime + 'static> Deref for CustomRuntime<R> {
     type Target = dyn Fn(&mut dyn std::io::Read) -> Result<ExecutionResult, CustomRuntimeError<R>>;
 

@@ -39,7 +39,7 @@ impl OptLevel {
 
 /// Checks if program is installed and panic with nice message if it is not.
 pub fn check_program_installed(program: &str) -> Result<(), CompilationError> {
-    if !which::which(program).is_ok() {
+    if which::which(program).is_err() {
         Err(CompilationError::ProgramNotInstalled(program.to_string()))
     } else {
         Ok(())

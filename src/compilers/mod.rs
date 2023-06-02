@@ -62,11 +62,8 @@ impl<R: CodeRuntime> CompiledCode<R> {
     /// This deletes the temporary directory containing the executable.
     pub fn clean_up(&mut self) -> io::Result<()> {
         // Delete the temporary directory.
-        match self.temp_dir_handle.lock().unwrap().take() {
-            Some(temp_dir) => {
-                temp_dir.close()?;
-            }
-            None => {}
+        if let Some(temp_dir) = self.temp_dir_handle.lock().unwrap().take() {
+            temp_dir.close()?;
         }
 
         Ok(())

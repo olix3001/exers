@@ -27,17 +27,11 @@ impl Default for NativeConfig {
 
 /// Additional data for native runtime.
 /// This is used to pass additional data from the compiler to the runtime.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct NativeAdditionalData {
     /// Program that should be used to run the code. <br/>
     /// Default is None, which means that the executable will be treated as a program.
     pub program: Option<String>,
-}
-
-impl Default for NativeAdditionalData {
-    fn default() -> Self {
-        Self { program: None }
-    }
 }
 
 /// Runtime for native code.
@@ -59,10 +53,10 @@ impl CodeRuntime for NativeRuntime {
         let mut process = match &code.additional_data.program {
             Some(program) => {
                 let mut cmd = std::process::Command::new(program);
-                cmd.arg(&code.executable.as_ref().unwrap());
+                cmd.arg(code.executable.as_ref().unwrap());
                 cmd
             }
-            None => std::process::Command::new(&code.executable.as_ref().unwrap()),
+            None => std::process::Command::new(code.executable.as_ref().unwrap()),
         };
 
         // Set stdin.

@@ -33,7 +33,7 @@ impl<T: Tunables> LimitingTunables<T> {
     }
 
     fn adjust_memory(&self, requested: &MemoryType) -> MemoryType {
-        let mut adjusted = requested.clone();
+        let mut adjusted = *requested;
         if requested.maximum.is_none() {
             adjusted.maximum = Some(self.limit);
         }

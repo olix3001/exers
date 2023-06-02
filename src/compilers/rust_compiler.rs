@@ -53,7 +53,7 @@ impl RustCompiler {
         command.arg(code_file.path());
 
         // Add compiler arguments.
-        for arg in config.clone().into_args() {
+        for arg in config.into_args() {
             command.arg(arg);
         }
 

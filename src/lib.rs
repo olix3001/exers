@@ -25,36 +25,31 @@
 //! Runtimes take [`CompiledCode<R: CodeRuntime>`](crate::compilers::CompiledCode) object and run it.
 //!
 //! ## Example
-//! ```rust
-//! use exers::{
-//!    compilers::{rust_compiler::RustCompiler, Compiler},
-//!    runtimes::{native_runtime::NativeRuntime, CodeRuntime},
-//! };
+//! ```rust, no_run
+//! // Create compiler.
+//! let compiler = RustCompiler;
 //!
-//! fn main() {
-//!     // Create compiler.
-//!     let compiler = RustCompiler;
+//! // Create runtime.
+//! let runtime = NativeRuntime;
 //!
-//!     // Create runtime.
-//!     let runtime = NativeRuntime;
+//! // Our code
+//! let code = r#"
+//!     fn main() {
+//!        println!("Hello, world!");
+//!     }
+//! "#;
 //!
-//!     // Our code
-//!     let code = r#"
-//!         fn main() {
-//!            println!("Hello, world!");
-//!         }
-//!     "#;
-//!
-//!     // Compile the code. Code can be any kind of object that implements (Read)[std::io::Read] trait.
-//!     let compiled = compiler.compile(&mut code.as_bytes(), Default::default()).unwrap();
+//! // Compile the code. Code can be any kind of object that implements (Read)[std::io::Read] trait.
+//! let compiled = compiler.compile(&mut code.as_bytes(), Default::default()).unwrap();
 //!     
-//!     // Run the code. Native runtime just runs the executable file.
-//!     let result = runtime.run(&compiled, Default::default()).unwrap();
+//! // Run the code. Native runtime just runs the executable file.
+//! let result = runtime.run(&compiled, Default::default()).unwrap();
 //!
-//!     // Print the result.
-//!     println!("stdout: {}", result.stdout.unwrap());
-//! }
+//! // Print the result.
+//! println!("stdout: {}", result.stdout.unwrap());
 //! ```
+
+#![allow(clippy::clone_double_ref, clippy::uninlined_format_args)]
 
 pub mod common;
 pub mod compilers;
