@@ -8,7 +8,6 @@ pub enum PreprocessorError {
 
     /// Error while preprocessing code.
     Other(String),
-
     // TODO: Add more errors.
 }
 

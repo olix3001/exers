@@ -2,10 +2,11 @@ use std::{
     fmt::Debug,
     fs::File,
     io::{Read, Write},
-    sync::Arc, path::PathBuf,
+    path::PathBuf,
+    sync::Arc,
 };
 
-use wasmer::{wasmparser::Operator, BaseTunables, Engine, Pages, NativeEngineExt};
+use wasmer::{wasmparser::Operator, BaseTunables, Engine, NativeEngineExt, Pages};
 use wasmer_wasix::virtual_fs::TmpFileSystem;
 
 use crate::{
@@ -228,9 +229,8 @@ impl CodeRuntime for WasmRuntime {
         // Add preopen dir if present.
         if let Some(dir) = &code.additional_data.preopen_dir {
             // Get host fs.
-            let host_fs: Arc<dyn wasmer_wasix::virtual_fs::FileSystem + Send + Sync + 'static> = Arc::new(
-                wasmer_wasix::virtual_fs::host_fs::FileSystem::default()
-            );
+            let host_fs: Arc<dyn wasmer_wasix::virtual_fs::FileSystem + Send + Sync + 'static> =
+                Arc::new(wasmer_wasix::virtual_fs::host_fs::FileSystem::default());
 
             // Create tmp fs and mount host fs.
             let tmp_fs = TmpFileSystem::new();

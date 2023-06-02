@@ -2,16 +2,22 @@
 
 use std::{io::Read, ops::Deref};
 
-use crate::{compilers::{Compiler, CompiledCode}, runtimes::{CodeRuntime, ExecutionResult}};
+use crate::{
+    compilers::{CompiledCode, Compiler},
+    runtimes::{CodeRuntime, ExecutionResult},
+};
 
-use super::{preprocessor::Preprocessor, compiler::{CompilationResult, CompilationError}};
+use super::{
+    compiler::{CompilationError, CompilationResult},
+    preprocessor::Preprocessor,
+};
 
 /// Builder for creating more complex compilers.
-/// 
+///
 /// # Example
 /// ```rs, no_run
 /// // Imports
-/// 
+///
 /// fn main() {
 ///    // Create new runtime.
 ///    let scratch_runtime = RuntimeBuilder::new()
@@ -19,7 +25,7 @@ use super::{preprocessor::Preprocessor, compiler::{CompilationResult, Compilatio
 ///        .compiler(CppCompiler, None) // Compiler config is not needed.
 ///        .runtime(NativeRuntime, None) // Runtime config is not needed.
 ///        .build()
-/// 
+///
 ///     // Run code using preconfigured runtime.
 ///     println!("{:?}", scratch_runtime(&mut "code"));
 /// }
@@ -84,8 +90,14 @@ impl<C: Compiler<R> + 'static, R: CodeRuntime + 'static> RuntimeBuilder<C, R> {
     /// Builds new compiler from builder.
     pub fn build(mut self) -> RuntimeBuilderResult<CustomRuntime<R>> {
         // Take compiler and runtime from builder.
-        let compiler = self.compiler.take().ok_or(RuntimeBuilderError::CompilerNotSet)?;
-        let runtime = self.runtime.take().ok_or(RuntimeBuilderError::RuntimeNotSet)?;
+        let compiler = self
+            .compiler
+            .take()
+            .ok_or(RuntimeBuilderError::CompilerNotSet)?;
+        let runtime = self
+            .runtime
+            .take()
+            .ok_or(RuntimeBuilderError::RuntimeNotSet)?;
 
         // Take their configs, or use default if they are not set.
         let compiler_config = self.compiler_config.take().unwrap_or_default();
@@ -120,24 +132,26 @@ pub struct CustomRuntime<R: CodeRuntime> {
     crf: Box<dyn Fn(&mut dyn std::io::Read) -> Result<ExecutionResult, CustomRuntimeError<R>>>,
 }
 
-impl <R: CodeRuntime> CustomRuntime<R> {
+impl<R: CodeRuntime> CustomRuntime<R> {
     /// Creates new custom runtime. This should be used only by builder.
     pub(crate) fn new(
         cf: impl Fn(&mut dyn std::io::Read) -> CompilationResult<CompiledCode<R>> + 'static,
         rf: impl Fn(&CompiledCode<R>) -> Result<ExecutionResult, R::Error> + 'static,
     ) -> Self {
         Self {
-            // cf: Box::new(cf),
-            // rf: Box::new(rf),
             crf: Box::new(move |code| {
-                let compiled_code = cf(code).map_err(|e| CustomRuntimeError::CompilationError(e))?;
+                let compiled_code =
+                    cf(code).map_err(|e| CustomRuntimeError::CompilationError(e))?;
                 (rf)(&compiled_code).map_err(|e| CustomRuntimeError::RuntimeError(e))
             }),
         }
     }
 
     /// Compiles and runs code using custom compiler and runtime.
-    pub fn run(&self, code: &mut dyn std::io::Read) -> Result<ExecutionResult, CustomRuntimeError<R>> {
+    pub fn run(
+        &self,
+        code: &mut dyn std::io::Read,
+    ) -> Result<ExecutionResult, CustomRuntimeError<R>> {
         (self.crf)(code)
     }
 }
@@ -177,7 +191,7 @@ mod tests {
     fn test_builder_rust_wasm() {
         let rust_wasm_runtime = RuntimeBuilder::new()
             .compiler(RustCompiler, None)
-            .runtime(WasmRuntime,None)
+            .runtime(WasmRuntime, None)
             .build()
             .unwrap();
 
@@ -188,8 +202,7 @@ mod tests {
         "#;
 
         assert_eq!(
-            rust_wasm_runtime(&mut code.as_bytes())
-            .unwrap().stdout,
+            rust_wasm_runtime(&mut code.as_bytes()).unwrap().stdout,
             Some("Hello, world!\n".to_string())
         );
 
@@ -201,8 +214,7 @@ mod tests {
         "#;
 
         assert_eq!(
-            rust_wasm_runtime(&mut code.as_bytes())
-            .unwrap().stdout,
+            rust_wasm_runtime(&mut code.as_bytes()).unwrap().stdout,
             Some("Hello, world!\nHello, world!\n".to_string())
         );
     }

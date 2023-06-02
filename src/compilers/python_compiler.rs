@@ -6,7 +6,7 @@ use std::{
 
 #[allow(unused_imports)]
 use crate::{
-    common::compiler::{CompilationResult, CompilationError},
+    common::compiler::{CompilationError, CompilationResult},
     runtimes::native_runtime::{NativeAdditionalData, NativeRuntime},
 };
 
@@ -172,7 +172,7 @@ impl Compiler<NativeRuntime> for PythonCompiler {
 
 /// Python compiler for wasm runtime.
 #[cfg(feature = "wasm")]
-use crate::runtimes::wasm_runtime::{WasmRuntime, WasmAdditionalData};
+use crate::runtimes::wasm_runtime::{WasmAdditionalData, WasmRuntime};
 
 #[cfg(feature = "wasm")]
 impl Compiler<WasmRuntime> for PythonCompiler {
@@ -222,8 +222,6 @@ impl Compiler<WasmRuntime> for PythonCompiler {
     }
 }
 
-
-
 #[cfg(test)]
 mod tests {
     use crate::{
@@ -262,18 +260,18 @@ print("Hello, world!", end="")
         assert_eq!(result.stdout, Some("Hello, world!".to_string()));
     }
 
-//     #[cfg(feature = "wasm")]
-//     #[test]
-//     fn test_python_compile_wasm() {
-//         let code = r#"
-// print("Hello, world!", end="")
-// "#;
+    //     #[cfg(feature = "wasm")]
+    //     #[test]
+    //     fn test_python_compile_wasm() {
+    //         let code = r#"
+    // print("Hello, world!", end="")
+    // "#;
 
-//         let compiled = super::PythonCompiler
-//             .compile(&mut code.as_bytes(), Default::default())
-//             .unwrap();
+    //         let compiled = super::PythonCompiler
+    //             .compile(&mut code.as_bytes(), Default::default())
+    //             .unwrap();
 
-//         let result = super::WasmRuntime.run(&compiled, Default::default()).unwrap();
-//         assert_eq!(result.stdout, Some("Hello, world!".to_string()));
-//     }
+    //         let result = super::WasmRuntime.run(&compiled, Default::default()).unwrap();
+    //         assert_eq!(result.stdout, Some("Hello, world!".to_string()));
+    //     }
 }
