@@ -33,12 +33,13 @@ fn main() {
 
 ## Available runtimes :running_man:
 
-| Runtime     | Status                      |
-| ----------- | --------------------------- |
-| WASM        | Implemented                 |
-| Native      | Implemented                 |
-| Jailed      | In development, not working |
-| Firecracker | Not started                 |
+| Runtime       | Status                      |
+| ------------- | --------------------------- |
+| WASM          | Implemented                 |
+| Native        | Implemented                 |
+| Jailed        | In development, not working |
+| Firecracker   | Not started                 |
+| Docker/Podman | Not started                 |
 
 ## Contributing :handshake:
 
