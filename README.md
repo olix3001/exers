@@ -71,6 +71,10 @@ LLVM offers better performance, but has longer compilation times.
 This feature allows you to use Cython for the Python runtime.
 This makes code execution faster, but requires Cython to be installed.
 
+## Examples :page_facing_up:
+
+Examples can be found in the `examples` directory. To run them, you need to install the required dependencies for the languages you want to use. You can then run the examples with `cargo run --example <example_name>`.
+
 ## Dockerfile :whale:
 
 This project contains a Dockerfile that can be used to build a docker image with all the required dependencies for all the languages and runtimes. This image can be used to base your own images on :smile:.
