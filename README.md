@@ -21,25 +21,24 @@ fn main() {
 
 ## Supported languages :books:
 
-| Language | Supported Runtimes | Required Dependencies      |
-| -------- | ------------------ | -------------------------- |
-| Rust     | Wasm, Native       | Rustc                      |
-| C++      | Wasm, Native       | clang++                    |
-| Python   | Native             | python3, Cython (optional) |
-| Java     | None               | ---                        |
-| C#       | None               | ---                        |
-| Go       | None               | ---                        |
-| Ruby     | None               | ---                        |
+| Language   | Supported Runtimes | Required Dependencies      |
+| ---------- | ------------------ | -------------------------- |
+| Rust       | Wasm, Native       | Rustc                      |
+| C++        | Wasm, Native       | clang++                    |
+| Python     | Native             | python3, Cython (optional) |
+| JavaScript | None               | ---                        |
+| C#         | None               | ---                        |
+| Go         | None               | ---                        |
 
 ## Available runtimes :running_man:
 
-| Runtime       | Status                      |
-| ------------- | --------------------------- |
-| WASM          | Implemented                 |
-| Native        | Implemented                 |
-| Jailed        | In development, not working |
-| Firecracker   | Not started                 |
-| Docker/Podman | Not started                 |
+| Runtime       | Status      |
+| ------------- | ----------- |
+| WASM          | Implemented |
+| Native        | Implemented |
+| Jailed        | Not working |
+| Firecracker   | Not started |
+| Docker/Podman | Not started |
 
 ## Contributing :handshake:
 
