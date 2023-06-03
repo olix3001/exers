@@ -71,6 +71,9 @@ LLVM offers better performance, but has longer compilation times.
 This feature allows you to use Cython for the Python runtime.
 This makes code execution faster, but requires Cython to be installed.
 
+### Bundled :package: (planned)
+contains all the dependencies for all the languages and runtimes, so you don't have to install them yourself. This may be useful for some use cases, but it will make the library much larger (probably over 1GB).
+
 ## Examples :page_facing_up:
 
 Examples can be found in the `examples` directory. To run them, you need to install the required dependencies for the languages you want to use. You can then run the examples with `cargo run --example <example_name>`.

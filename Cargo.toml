@@ -13,10 +13,10 @@ keywords = ["sandbox", "wasm", "rust", "compile"]
 doctest = false
 
 [features]
-default = ["wasm", "native", "cpp", "python", "jailed"]
+default = ["wasm", "native", "cpp", "python", "jailed", "javascript"]
 
 # Shortcuts
-all-languages = ["cpp", "python"]
+all-languages = ["cpp", "python", "javascript"]
 all-runtimes = ["wasm", "native", "jailed"]
 
 # Runtimes
@@ -27,6 +27,7 @@ jailed = ["native"]
 # Languages
 cpp = []
 python = []
+javascript = []
 
 # Additional features
 wasm-llvm = ["wasmer-compiler-llvm"]

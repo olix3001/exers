@@ -25,6 +25,9 @@ pub mod cpp_compiler;
 pub mod python_compiler;
 pub mod rust_compiler;
 
+#[cfg(feature = "javascript")]
+pub mod js_compiler;
+
 /// Trait for every compiler that can be used to compile some code.
 pub trait Compiler<R: CodeRuntime>: Send + Sync + Sized {
     /// Configuration for the compiler.
@@ -79,4 +82,10 @@ impl<R: CodeRuntime> Drop for CompiledCode<R> {
 // Converts Config to args.
 pub trait IntoArgs {
     fn into_args(self) -> Vec<String>;
+}
+
+impl IntoArgs for () {
+    fn into_args(self) -> Vec<String> {
+        vec![]
+    }
 }
