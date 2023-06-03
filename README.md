@@ -21,14 +21,14 @@ fn main() {
 
 ## Supported languages :books:
 
-| Language   | Supported Runtimes | Required Dependencies      |
-| ---------- | ------------------ | -------------------------- |
-| Rust       | Wasm, Native       | Rustc                      |
-| C++        | Wasm, Native       | clang++                    |
-| Python     | Native             | python3, Cython (optional) |
-| JavaScript | None               | ---                        |
-| C#         | None               | ---                        |
-| Go         | None               | ---                        |
+| Language   | Supported Runtimes       | Required Dependencies      |
+| ---------- | ------------------------ | -------------------------- |
+| Rust       | Wasm, Native             | Rustc                      |
+| C++        | Wasm, Native             | clang++, wasi sdk (wasm)   |
+| Python     | Native                   | python3, Cython (optional) |
+| JavaScript | Wasm (read docs), Native | node js, javy (wasm)       |
+| C#         | None                     | ---                        |
+| Go         | None                     | ---                        |
 
 ## Available runtimes :running_man:
 
@@ -72,6 +72,7 @@ This feature allows you to use Cython for the Python runtime.
 This makes code execution faster, but requires Cython to be installed.
 
 ### Bundled :package: (planned)
+
 contains all the dependencies for all the languages and runtimes, so you don't have to install them yourself. This may be useful for some use cases, but it will make the library much larger (probably over 1GB).
 
 ## Examples :page_facing_up:
