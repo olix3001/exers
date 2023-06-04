@@ -16,8 +16,10 @@ doctest = false
 default = ["wasm", "native", "cpp", "python", "jailed", "javascript"]
 
 # Shortcuts
+everything = ["all-languages", "all-runtimes", "all-addons"]
 all-languages = ["cpp", "python", "javascript"]
 all-runtimes = ["wasm", "native", "jailed"]
+all-addons = ["wasm-llvm", "cython"]
 
 # Runtimes
 wasm = ["wasmer", "wasmer-wasix", "wasmer-middlewares"]

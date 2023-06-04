@@ -40,5 +40,17 @@ RUN apt install -y \
     python3 \
     python3-pip
 
+# Install node and javy as we need them for javascript compiler
+RUN curl -sL https://deb.nodesource.com/setup_18.x | bash -
+RUN apt install -y nodejs
+
+RUN curl https://github.com/bytecodealliance/javy/releases/download/v1.0.1/javy-x86_64-linux-v1.0.1.gz -L -o javy.gz
+RUN apt install -y gzip
+RUN gunzip javy.gz && chmod +x javy && mkdir /javy_js && mv javy /javy_js
+ENV JAVY_PATH=/javy_js
+
+# Install sudo
+RUN apt install -y sudo
+
 # Clean apt cache
 RUN rm -rf /var/lib/apt/lists/*
