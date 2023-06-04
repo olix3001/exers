@@ -16,7 +16,7 @@ use crate::{
 // const PYTHON_WASM: &[u8] = include_bytes!("../../assets/python.wasm");
 
 #[cfg(feature = "cython")]
-use crate::common::compiler::{check_program_installed, CompilationError};
+use crate::common::compiler::check_program_installed;
 
 #[cfg(feature = "cython")]
 use super::cpp_compiler::CppCompiler;
