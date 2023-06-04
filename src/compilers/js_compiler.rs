@@ -51,7 +51,7 @@ impl Compiler<WasmRuntime> for JsCompiler {
     /// Compile javascript code to wasm using javy.
     ///
     /// **WARNING**: Output from console.log will be written to stderr instead of stdout. (This will be fixed in the future)
-    /// 
+    ///
     /// ### How to print to stdout? (temporary workaround)
     /// ```js,ignore
     /// function writeStdout(data) {

@@ -198,6 +198,8 @@ impl CodeRuntime for WasmRuntime {
 
         // Create store.
         let mut store = wasmer::Store::new(engine);
+
+        // Create module.
         let module = wasmer::Module::from_file(&store, code.executable.as_ref().unwrap())?;
 
         // Crate wasi pipes.

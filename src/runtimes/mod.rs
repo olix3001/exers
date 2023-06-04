@@ -7,7 +7,7 @@
 use crate::compilers::CompiledCode;
 use std::fmt::Debug;
 
-#[cfg(all(feature = "jailed", feature = "native"))]
+#[cfg(all(feature = "jailed", feature = "native", target_family = "unix"))]
 pub mod jailed_runtime;
 #[cfg(feature = "native")]
 pub mod native_runtime;
