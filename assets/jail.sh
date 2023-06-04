@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # Script for running programs in a jail
 # Usage: jail.sh <jail dir> <program> <...dependencies>
@@ -22,25 +22,15 @@ done
 # Copy the program to the jail
 cp -v $2 $1/bin
 
-# Copy the program's dependencies to the jail
+# Copy additional files to the jail
 if [ $# -gt 2 ]; then
-    for dep in ${@:3}; do
-        cp -v $dep $1/bin
-    done
-
-    # Copy dependecies of the program's dependencies to the jail
-    for dep in ${@:3}; do
-        for dep2 in $(ldd $dep | grep -o '/.*/'); do
-            mkdir -pv $1$dep2
-        done
-        for dep2 in $(ldd $dep | grep -o '/\S*'); do
-            cp -v $dep2 $1$(dirname $dep2)
-        done
+    for file in ${@:3}; do
+        cp -v $file $1/$file
     done
 fi
 
 # Run the program in the jail
-sudo chroot $1 /bin/$(basename $2)
+sudo chroot $1 /bin/$(basename $2) ${@:3}
 
 # Clean up
 rm -rf $1
