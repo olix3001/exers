@@ -55,6 +55,4 @@ jobs:
             - name: Checkout
               uses: actions/checkout@v3
             - name: Test
-              run: ls -a $GITHUB_WORKSPACE
-            - name: Test
-              run: docker run --rm -v "$GITHUB_WORKSPACE:/app" exers:latest sh -c "cd app & sudo -E /root/.cargo/bin/cargo test --locked --features everything"
+              run: docker run --rm -v "$GITHUB_WORKSPACE:/app" exers bash -c "cd app && sudo -E /root/.cargo/bin/cargo test --locked --features everything"
