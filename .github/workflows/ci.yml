@@ -54,7 +54,7 @@ jobs:
                   docker image ls -a
             - name: Checkout
               uses: actions/checkout@v3
-              with:
-                  path: app
             - name: Test
-              run: docker run --rm -v "$GITHUB_WORKSPACE/app:/app" exers:latest sh -c "cd app & sudo -E /root/.cargo/bin/cargo test --locked --features everything"
+              run: ls -a $GITHUB_WORKSPACE
+            - name: Test
+              run: docker run --rm -v "$GITHUB_WORKSPACE:/app" exers:latest sh -c "cd app & sudo -E /root/.cargo/bin/cargo test --locked --features everything"
