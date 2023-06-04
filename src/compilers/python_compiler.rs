@@ -12,8 +12,8 @@ use crate::{
 
 /// Include python wasm file if wasm feature is enabled. <br/>
 /// This is from https://github.com/vmware-labs/webassembly-language-runtimes/releases <br/>
-#[cfg(feature = "wasm")]
-const PYTHON_WASM: &[u8] = include_bytes!("../../assets/python.wasm");
+// #[cfg(feature = "wasm")]
+// const PYTHON_WASM: &[u8] = include_bytes!("../../assets/python.wasm");
 
 #[cfg(feature = "cython")]
 use crate::common::compiler::{check_program_installed, CompilationError};
@@ -199,7 +199,7 @@ impl Compiler<WasmRuntime> for PythonCompiler {
 
         // Copy python.wasm to the temporary directory.
         let mut wasm_file = File::create(temp_dir.path().join("python.wasm"))?;
-        std::io::copy(&mut PYTHON_WASM.clone(), &mut wasm_file)?;
+        // std::io::copy(&mut PYTHON_WASM.clone(), &mut wasm_file)?;
 
         // Create sandbox directory.
         std::fs::create_dir(temp_dir.path().join("sandbox"))?;

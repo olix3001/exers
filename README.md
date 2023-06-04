@@ -30,15 +30,17 @@ fn main() {
 | C#         | None                     | ---                        |
 | Go         | None                     | ---                        |
 
+_Jailed runtime is not listed, because it supports all languages that support the Native runtime. (In theory)_
+
 ## Available runtimes :running_man:
 
-| Runtime       | Status      |
-| ------------- | ----------- |
-| WASM          | Implemented |
-| Native        | Implemented |
-| Jailed        | Not working |
-| Firecracker   | Not started |
-| Docker/Podman | Not started |
+| Runtime       | Status                              |
+| ------------- | ----------------------------------- |
+| WASM          | Implemented                         |
+| Native        | Implemented                         |
+| Jailed        | Implemented (Requires more testing) |
+| Firecracker   | Not started                         |
+| Docker/Podman | Not started                         |
 
 ## Contributing :handshake:
 
