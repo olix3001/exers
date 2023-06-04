@@ -43,7 +43,7 @@ jobs:
                   path: /tmp/exers_container.tar
                   key: exers-container-cache
             - name: Download artifact
-              if: steps.cache-container.outputs.cache-hit == 'true'
+              if: steps.cache-container.outputs.cache-hit != 'true'
               uses: actions/download-artifact@v3
               with:
                   name: exers_container
