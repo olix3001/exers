@@ -26,6 +26,7 @@ jobs:
                   outputs: type=docker,dest=/tmp/exers_container.tar
             - name: Upload artifact
               uses: actions/upload-artifact@v3
+              if: steps.cache-container.outputs.cache-hit != 'true'
               with:
                   name: exers_container
                   path: /tmp/exers_container.tar
@@ -35,7 +36,14 @@ jobs:
         steps:
             - name: Set up Docker Buildx
               uses: docker/setup-buildx-action@v2
+            - name: Cache container
+              id: cache-container
+              uses: actions/cache@v3
+              with:
+                  path: /tmp/exers_container.tar
+                  key: exers-container-cache
             - name: Download artifact
+              if: steps.cache-container.outputs.cache-hit == 'true'
               uses: actions/download-artifact@v3
               with:
                   name: exers_container
@@ -47,4 +55,4 @@ jobs:
             - name: Checkout
               uses: actions/checkout@v3
             - name: Test
-              run: docker run --rm -v .:/app exers:latest sh -c "cd app & sudo cargo test"
+              run: docker run --rm -v $GITHUB_WORKSPACE:/app exers:latest sh -c "cd app & sudo cargo test"
